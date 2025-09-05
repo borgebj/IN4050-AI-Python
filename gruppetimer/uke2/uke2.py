@@ -32,7 +32,7 @@ plt.show()
 
 # Gradient ascent
 gamma = 0.1         # step size
-x = 0.5             # starting point (any value in [-2, 3]
+x = 0               # starting point (any value in [-2, 3]
 iterations = 20     # no. updates
 
 x_values = [x]
