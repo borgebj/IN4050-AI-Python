@@ -1,0 +1,15 @@
+__MACOSX
+../__MACOSX/
+__MACOSX/
+__pycache__
+build
+*.html
+.idea
+.vscode
+.venv
+*.iml
+.iml
+java-out
+bin
+jena
+*.xml
