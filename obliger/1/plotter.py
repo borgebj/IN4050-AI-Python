@@ -58,5 +58,5 @@ with open("european_cities.csv", "r") as f:
 
 #Example usage of the plotting-method.
 plan = list(city_coords.keys()) # Gives us the cities in alphabetic order
-print(plan)
+#print(plan)
 plot_plan(plan)
