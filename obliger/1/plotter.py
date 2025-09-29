@@ -4,6 +4,8 @@ import numpy as np
 
 def plot_plan(city_order):
     """Plots given plan (list of city names) on the map."""
+    assert city_order is not None
+
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.imshow(europe_map, extent=[-14.56, 38.43, 37.697 + 0.3, 64.344 + 2.0], aspect="auto")
 
