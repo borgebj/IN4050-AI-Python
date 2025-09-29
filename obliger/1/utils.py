@@ -21,9 +21,27 @@ def get_city_index(city):
     return cities.index(city)
 
 
-def get_distance(city1, city2):
+def get_city_distance(city1, city2):
     """Returns the distance between two cities."""
     i = get_city_index(city1)
     j = get_city_index(city2)
 
     return matrix[i][j]
+
+
+def get_path_distance(path, verbose):
+    """Calculates the total distance of the given path."""
+    total_distance = 0
+    num_cities = len(path)
+
+    # all cities in a permutation
+    for i, city in enumerate(path):
+        next_city = path[(i + 1) % num_cities]  # wraps around to first
+        dist = get_city_distance(city, next_city)
+        total_distance += float(dist)
+
+        # display in terminal
+        if verbose:
+            print(f"\t{city:8}\t-> {dist} ->\t{next_city},")
+
+    return total_distance

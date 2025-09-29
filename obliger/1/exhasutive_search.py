@@ -1,6 +1,6 @@
 import time
 from plotter import plot_plan
-from utils import cities, matrix, permute, get_distance
+from utils import cities, matrix, permute, get_path_distance
 
 
 def find_shortest_path(city_perms):
@@ -14,22 +14,15 @@ def find_shortest_path(city_perms):
 
     # all permutations
     for permutation in city_perms:
-        total_distance = 0
 
-        # all cities in a permutation
-        for i, city in enumerate(permutation):
-            next_city = permutation[(i + 1) % len(permutation)]
-            dist = get_distance(city, next_city)
-            total_distance += float(dist)
-
-            if verbose:
-                print(f"\t{city:8}\t-> {dist} ->\t{next_city},")
+        total_distance = get_path_distance(permutation, verbose)
 
         # compare shortest
         if total_distance < shortest_distance:
             shortest_distance = total_distance
             shortest_path = permutation
 
+        # display in terminal
         if verbose:
             print(f"Total distance: {total_distance:.4f} km")
             print(f"\n")
@@ -58,7 +51,7 @@ def main():
     path = find_shortest_path(city_perms)
 
     end = time.time()
-    print(f"Time taken: {end - start:.4f} seconds")
+    print(f"\nTime taken: {end - start:.4f} seconds")
 
     plot_plan(path)
 
