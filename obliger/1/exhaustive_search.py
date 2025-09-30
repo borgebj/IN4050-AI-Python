@@ -1,10 +1,7 @@
-from utils import cities, matrix, permute, get_path_distance, format_time
+from utils import city_names, permute, get_path_distance, format_time
 from plotter import plotter
-import numpy as np
-import math
 import time
-
-
+import math
 
 
 # <----------- MAIN OPTIMIZATION FUNCTION ----------> #
@@ -42,16 +39,14 @@ def exhaustive_search(cities, verbose=False):
     return list(shortest_path), shortest_distance
 
 
-
 def main():
-    global cities, matrix
 
     # main flags
     verbose = False
-    LIMIT = 8
+    LIMIT = 10  # 24 max
 
     # limits no. cities
-    cities = cities[:LIMIT]
+    cities = city_names[:LIMIT]
 
     # all permutations, then finds shortest among all
     start = time.time()
@@ -61,20 +56,18 @@ def main():
     # prints info on main run
     path_str = ' -> '.join(path) + f" -> {path[0]}"
     print(f"\nShortest path:\n>\t{path_str}\nwith distance:\n>\t{distance:.4f}")
-    num_perms = math.factorial(len(cities))
+    num_perms = math.factorial(len(city_names))
     print(f"Number of permutations checked:\n>\t{format(num_perms, ',d')}")
     print(f"Time taken for {LIMIT} cities:\n>\t{format_time(end - start)}\n")
-
-
 
     # ============ EXTRA =========== #
 
     plotter(
-            LIMIT=8, 
-            MAX_EXTRAPOLATE=24, 
-            path=path, 
-            function=exhaustive_search,
-            extrapolate=True
+        LIMIT=10,
+        MAX_EXTRAPOLATE=24,
+        path=path,
+        function=exhaustive_search,
+        extrapolate=True
     )
 
 

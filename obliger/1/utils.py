@@ -5,31 +5,25 @@ from typing import Literal
 import numpy as np
 import math
 
-
 """Reads the CSV file and returns the cities and distance matrix."""
 with open("european_cities.csv", "r") as f:
     data = list(csv.reader(f, delimiter=';'))
-    cities = data[0]
+    city_names = data[0]
 
     matrix = data[1:]
     # removing row 1 (labels), now works as an adjacency matrix
     # matrix[i][j] is the distance from city i to city j
 
 
-def permute(cities):
+def permute(given_cities):
     """Returns all permutations of the given list of cities."""
-    return list(permutations(cities))
-
-
-def get_city_index(city):
-    """Returns the index of the given city in the data."""
-    return cities.index(city)
+    return list(permutations(given_cities))
 
 
 def get_city_distance(city1, city2):
     """Returns the distance between two cities."""
-    i = get_city_index(city1)
-    j = get_city_index(city2)
+    i = city_names.index(city1)  # index of city1 : a in [a, b, c] = 0
+    j = city_names.index(city2)  # index of city2 : c in [a, b, c] = 2
 
     return matrix[i][j]
 
@@ -77,12 +71,11 @@ def measure_runtime(function, n, step=1):
     """Gets runtime of given function for values 1 to n cities (n!)"""
     times = []
 
-    for i in range(1, n+1, step):
+    for i in range(1, n + 1, step):
         if function.__name__ == "exhaustive_search":
-            data = cities[:i] # because factorial takes forever = becomes subset of original
+            data = city_names[:i].copy()  # because factorial takes forever = becomes subset of original
         else:
-            data = cities
-
+            data = city_names.copy()
 
         start = time.time()
         res = function(data)
@@ -97,12 +90,12 @@ def measure_runtime(function, n, step=1):
 def extrapolate_runtime(times, n, method: Literal["hill_climb", "exhaustive_search"]):
     """Chooses which function to extrapolate"""
     if method == "hill_climb":
-        extrapolated_times, predict = extrapolate_hill(times, n) # linear
+        extrapolated_times, predict = extrapolate_hill(times, n)  # linear
     elif method == "exhaustive_search":
-        extrapolated_times, predict = extrapolate_exhaustive(times, n) # log-log factorial
+        extrapolated_times, predict = extrapolate_exhaustive(times, n)  # log-log factorial
     else:
         raise ValueError("Unknown method")
-    
+
     return extrapolated_times, predict
 
 
@@ -116,6 +109,11 @@ def extrapolate_exhaustive(times, n):
     n_vals = np.array([t[0] for t in times])
     t_vals = np.array([t[1] for t in times])
 
+    # remove zero times because of log-log
+    mask = t_vals > 0
+    n_vals = n_vals[mask]
+    t_vals = t_vals[mask]
+
     # log-log scale
     log_nfact = np.log([math.factorial(n) for n in n_vals])
     log_t = np.log(t_vals)
@@ -128,8 +126,8 @@ def extrapolate_exhaustive(times, n):
 
     # extrapolation
     extrapolate_times = []
-    for i in range(n_vals[-1]+1, n+1):
-        log_t_n = slope * math.log(math.factorial(i)) + intercept      # <-- uses extrapolation function with log(n!)
+    for i in range(n_vals[-1] + 1, n + 1):
+        log_t_n = slope * math.log(math.factorial(i)) + intercept  # <-- uses extrapolation function with log(n!)
         t_n = np.exp(log_t_n)
         extrapolate_times.append((i, t_n))
 
@@ -160,12 +158,12 @@ def extrapolate_hill(times, n):
 
     # extrapolated times
     extrapolated_times = []
-    for i in range(n_vals[-1]+1, n+1):
-        t_i = a*i + b
+    for i in range(n_vals[-1] + 1, n + 1):
+        t_i = a * i + b
         extrapolated_times.append((i, t_i))
 
     # prediction function
     def predict(n):
-        return a*n + b
+        return a * n + b
 
     return extrapolated_times, predict

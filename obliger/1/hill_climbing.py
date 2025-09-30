@@ -1,17 +1,15 @@
-from utils import cities, matrix, get_path_distance, format_time
+from utils import city_names, get_path_distance, format_time
 from plotter import plotter
-import random
 import time
+import random
 
 
-
-
-# <----------- MAIN OPTIMIZATION FUNCTIONs ----------> #
+# <----------- MAIN OPTIMIZATION FUNCTIONS ----------> #
 def generate_start(cities):
     """Takes a list of cities and shuffles it"""
     random.shuffle(cities)
     return cities
-    
+
 
 def generate_neighbors(path):
     """Generates neighboring paths by swapping two cities in the current path."""
@@ -24,24 +22,21 @@ def generate_neighbors(path):
         # swap with every other city after
         for j in range(i + 1, cities):
             neighbor = path.copy()
-            neighbor[i], neighbor[j] = neighbor[j], neighbor[i] # swap
+            neighbor[i], neighbor[j] = neighbor[j], neighbor[i]  # swap
             neighbors.append(neighbor)
 
     return neighbors
 
 
 def hill_climb(cities, verbose=False):
-    """Finds the shortest path among the given permutations of cities.
-    Uses 'Hill Climbing'
-
-    cities: all cities we want to look through
+    """Finds the shortest path among the (one) given permutations of cities generated at start.
     """
 
     # chooses an arbitrary (random) start, as well as its distance
     start = generate_start(cities)
     current_shortest = get_path_distance(start)
 
-    step = 0     # step counter
+    step = 0  # step counter
     while True:
         neighbors = generate_neighbors(start)
 
@@ -51,7 +46,6 @@ def hill_climb(cities, verbose=False):
         if verbose:
             print(f"\n[{step}] Start: {start} ({current_shortest:.2f})")
             print(f"[{step}] Best:  {best_neighbor} ({best_distance:.2f})\n")
-
 
         if best_distance < current_shortest:
             start = best_neighbor
@@ -64,16 +58,15 @@ def hill_climb(cities, verbose=False):
 
 
 def main():
-    global cities, matrix
 
     # main flags
     verbose = False
-    LIMIT = 8
+    LIMIT = 8  # 24 max
 
     # limits no. cities
-    cities = cities[:LIMIT]
+    cities = city_names[:LIMIT]
 
-    # finds the shortest path with regards to neighboring paths
+    # finds the shortest path in regard to neighboring paths
     start = time.time()
     path, distance, step = hill_climb(cities, verbose=verbose)
     end = time.time()
@@ -81,17 +74,15 @@ def main():
     # prints info on main run
     path_str = ' -> '.join(path) + f" -> {path[0]}"
     print(f"\nShortest path:\n>\t{path_str}\nwith distance:\n>\t{distance:.4f}")
-    print(f"Total neighbors visited:\n>\t{step+1}")
+    print(f"Total neighbors visited:\n>\t{step + 1}")
     print(f"Time taken for {LIMIT} cities:\n>\t{format_time(end - start)}\n")
-
-
 
     # ============ EXTRA =========== #
 
     plotter(
-        LIMIT=12, 
-        MAX_EXTRAPOLATE=24, 
-        path=path, 
+        LIMIT=12,
+        MAX_EXTRAPOLATE=24,
+        path=path,
         function=hill_climb,
         extrapolate=True
     )
