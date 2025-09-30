@@ -1,16 +1,14 @@
-from utils import cities, matrix, permute, get_path_distance, format_time, measure_runtime, extrapolate_runtime
-from plotter import plot_plan, plot_times, show_all_figures
+from utils import cities, matrix, permute, get_path_distance, format_time
+from plotter import plotter
 import numpy as np
 import math
 import time
 
 
-# <----------- EXTRA ----------> #
-
 
 
 # <----------- MAIN OPTIMIZATION FUNCTION ----------> #
-def exhasutive_search(cities, verbose=False):
+def exhaustive_search(cities, verbose=False):
     """Finds the shortest path among the given permutations of cities
     Uses 'Exhaustive Search'
 
@@ -48,7 +46,7 @@ def exhasutive_search(cities, verbose=False):
 def main():
     global cities, matrix
 
-    # flags
+    # main flags
     verbose = False
     LIMIT = 8
 
@@ -57,7 +55,7 @@ def main():
 
     # all permutations, then finds shortest among all
     start = time.time()
-    path, distance = exhasutive_search(cities, verbose=verbose)
+    path, distance = exhaustive_search(cities, verbose=verbose)
     end = time.time()
 
     # prints info on main run
@@ -71,27 +69,13 @@ def main():
 
     # ============ EXTRA =========== #
 
-    # plotting
-    LIMIT = 8
-    MAX_EXTRAPOLATE = 24
-    
-    # 1. Measure
-    times_measured = measure_runtime(exhasutive_search, LIMIT, step=1)
-
-    # 2. Extrapolate
-    times_extrapolated, predict = extrapolate_runtime(times_measured, MAX_EXTRAPOLATE, "exhaustive")
-
-    print("\nPredicted times for values:\n")
-    for n in [5, 10, 15, 20, 24]:
-        t_sec = float(predict(n))
-        print(f"{n:2d} cities: {format_time(t_sec)}")
-
-    # 3. plot
-    plot_times(times_measured, times_extrapolated, exhasutive_search)
-
-    plot_plan(path)
-
-    show_all_figures()
+    plotter(
+            LIMIT=8, 
+            MAX_EXTRAPOLATE=24, 
+            path=path, 
+            function=exhaustive_search,
+            extrapolate=True
+    )
 
 
 if __name__ == "__main__":

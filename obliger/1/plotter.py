@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from utils import format_time, measure_runtime, extrapolate_runtime
 
 
 #Map of Europe
@@ -72,6 +73,31 @@ def plot_times(measured, extrapolated, function):
     ax.grid(True, which='both', ls='--')
 
     return fig, ax
+
+
+def plotter(LIMIT, MAX_EXTRAPOLATE, path, function, extrapolate=True):
+    """Does the actual plotting + optional extrapolation"""
+    
+    if extrapolate:
+        # 1. Measure
+        times_measured = measure_runtime(function, LIMIT, step=1)
+
+        # 2. Extrapolate
+        function_name = function.__name__
+        times_extrapolated, predict = extrapolate_runtime(times_measured, MAX_EXTRAPOLATE, function_name)
+
+        print("\nPredicted times for values:\n")
+        for n in [5, 10, 15, 20, 24, 28, 32, 36, 40, 44, 48]:
+            t_sec = float(predict(n))
+            print(f"{n:2d} cities: {format_time(t_sec)}")
+
+        # 3. Plot measured + extrapolated times
+        plot_times(times_measured, times_extrapolated, function)
+
+    # plot plan, picture of path
+    plot_plan(path)
+    show_all_figures()
+
 
 
 

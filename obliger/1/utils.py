@@ -78,7 +78,7 @@ def measure_runtime(function, n, step=1):
     times = []
 
     for i in range(1, n+1, step):
-        if function.__name__ == "exhasutive_search":
+        if function.__name__ == "exhaustive_search":
             data = cities[:i] # because factorial takes forever = becomes subset of original
         else:
             data = cities
@@ -94,11 +94,11 @@ def measure_runtime(function, n, step=1):
     return times
 
 
-def extrapolate_runtime(times, n, method: Literal["hill", "exhaustive"]):
+def extrapolate_runtime(times, n, method: Literal["hill_climb", "exhaustive_search"]):
     """Chooses which function to extrapolate"""
-    if method == "hill":
+    if method == "hill_climb":
         extrapolated_times, predict = extrapolate_hill(times, n) # linear
-    elif method == "exhaustive":
+    elif method == "exhaustive_search":
         extrapolated_times, predict = extrapolate_exhaustive(times, n) # log-log factorial
     else:
         raise ValueError("Unknown method")

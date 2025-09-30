@@ -1,14 +1,7 @@
-from utils import cities, matrix, get_path_distance, format_time, measure_runtime, extrapolate_runtime
-from plotter import plot_plan, plot_times, show_all_figures
-import numpy as np
+from utils import cities, matrix, get_path_distance, format_time
+from plotter import plotter
 import random
-import math
 import time
-
-
-# <----------- EXTRA ----------> #
-
-
 
 
 
@@ -73,9 +66,9 @@ def hill_climb(cities, verbose=False):
 def main():
     global cities, matrix
 
-    # flags
+    # main flags
     verbose = False
-    LIMIT = 24
+    LIMIT = 8
 
     # limits no. cities
     cities = cities[:LIMIT]
@@ -95,27 +88,13 @@ def main():
 
     # ============ EXTRA =========== #
 
-    # plotting
-    LIMIT = 12
-    MAX_EXTRAPOLATE = 24
-
-    # 1. Measure
-    times_measured = measure_runtime(hill_climb, LIMIT, step=1)
-
-    # 2. Extrapolate
-    times_extrapolated, predict = extrapolate_runtime(times_measured, MAX_EXTRAPOLATE, "hill")
-
-    print("\nPredicted times for values:\n")
-    for n in [5, 10, 15, 20, 24, 28, 32, 36, 40, 44, 48]:
-        t_sec = float(predict(n))
-        print(f"{n:2d} cities: {format_time(t_sec)}")
-
-    plot_times(times_measured, times_extrapolated, hill_climb)
-
-    plot_plan(path)
-
-    show_all_figures()
-
+    plotter(
+        LIMIT=12, 
+        MAX_EXTRAPOLATE=24, 
+        path=path, 
+        function=hill_climb,
+        extrapolate=True
+    )
 
 
 if __name__ == "__main__":
