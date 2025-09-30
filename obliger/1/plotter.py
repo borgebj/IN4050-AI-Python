@@ -2,38 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_plan(city_order):
-    """Plots given plan (list of city names) on the map."""
-    assert city_order is not None
-
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.imshow(europe_map, extent=[-14.56, 38.43, 37.697 + 0.3, 64.344 + 2.0], aspect="auto")
-
-    # Map (long, lat) to (x, y) for plotting
-    for index in range(len(city_order) - 1):
-        current_city_coords = city_coords[city_order[index]]
-        next_city_coords = city_coords[city_order[index+1]]
-        x, y = current_city_coords[0], current_city_coords[1]
-
-        #Plotting a line to the next city
-        next_x, next_y = next_city_coords[0], next_city_coords[1]
-        plt.plot([x, next_x], [y, next_y])
-
-        plt.plot(x, y, 'ok', markersize=5)
-        plt.text(x, y, index, fontsize=12)
-
-    #Finally, plotting from last to first city
-    first_city_coords = city_coords[city_order[0]]
-    first_x, first_y = first_city_coords[0], first_city_coords[1]
-    plt.plot([next_x, first_x], [next_y, first_y])
-
-    #Plotting a marker and index for the final city
-    plt.plot(next_x, next_y, 'ok', markersize=5)
-    plt.text(next_x, next_y, index+1, fontsize=12)
-    plt.show()
-
-np.random.seed(57)
-
 #Map of Europe
 europe_map = plt.imread('map.png')
 
@@ -49,16 +17,71 @@ city_coords = {
     "Stockholm": [18.06, 60.33], "Vienna": [16.36, 48.21], "Warsaw": [21.02, 52.24]}
 
 
-#Helper code for plotting plans
-#First, visualizing the cities.
-import csv
-with open("european_cities.csv", "r") as f:
-    data = list(csv.reader(f, delimiter=';'))
-    cities = data[0]
+
+def plot_plan(city_order):
+    """Plots given plan (list of city names) on the map."""
+    assert city_order is not None
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.imshow(europe_map, extent=[-14.56, 38.43, 37.697 + 0.3, 64.344 + 2.0], aspect="auto")
+
+    # Map (long, lat) to (x, y) for plotting
+    for index in range(len(city_order) - 1):
+        current_city_coords = city_coords[city_order[index]]
+        next_city_coords = city_coords[city_order[index+1]]
+        x, y = current_city_coords[0], current_city_coords[1]
+
+        # Plotting a line to the next city
+        next_x, next_y = next_city_coords[0], next_city_coords[1]
+        ax.plot([x, next_x], [y, next_y])
+
+        ax.plot(x, y, 'ok', markersize=5)
+        ax.text(x, y, index, fontsize=12)
+
+    # Finally, plotting from last to first city
+    first_city_coords = city_coords[city_order[0]]
+    first_x, first_y = first_city_coords[0], first_city_coords[1]
+    ax.plot([next_x, first_x], [next_y, first_y])
+
+    # Plotting a marker and index for the final city
+    ax.plot(next_x, next_y, 'ok', markersize=5)
+    ax.text(next_x, next_y, index+1, fontsize=12)
+
+    return fig, ax
 
 
 
-#Example usage of the plotting-method.
-plan = list(city_coords.keys()) # Gives us the cities in alphabetic order
-#print(plan)
-plot_plan(plan)
+def plot_times(measured, extrapolated, function):
+    """Plots measured and extrapolated times on a graph"""
+    fig, ax = plt.subplots()
+
+    measured_x = [t[0] for t in measured]
+    measured_y = [t[1] for t in measured]
+    extrapolated_x = [t[0] for t in extrapolated]
+    extrapolated_y = [t[1] for t in extrapolated]
+
+    ax.plot(measured_x, measured_y, 'bo', label='Measured')
+    ax.plot(extrapolated_x, extrapolated_y, 'r--', label='Extrapolated')
+
+    ax.set_yscale('log')
+    ax.set_xlabel('Number of cities (n)')
+    ax.set_ylabel('Time (seconds, log scale)')
+    fun_name = function.__name__.replace('_', ' ').title()
+    ax.set_title(f'{fun_name} Runtime: Measured vs Extrapolated')
+    ax.legend()
+    ax.grid(True, which='both', ls='--')
+
+    return fig, ax
+
+
+
+def show_all_figures():
+    plt.show()
+
+
+if __name__ == "__main__":
+    #Example usage of the plotting-method.
+    plan = list(city_coords.keys()) # Gives us the cities in alphabetic order
+    print(plan)
+    plot_plan(plan)
+    show_all_figures()
