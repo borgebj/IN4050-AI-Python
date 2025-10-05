@@ -1,5 +1,4 @@
 import csv
-from itertools import permutations
 import time
 from typing import Literal
 import numpy as np
@@ -10,22 +9,14 @@ with open("european_cities.csv", "r") as f:
     data = list(csv.reader(f, delimiter=';'))
     city_names = data[0]
 
-    matrix = data[1:]
+    matrix = [[float(x) for x in row] for row in data[1:]]
     # removing row 1 (labels), now works as an adjacency matrix
     # matrix[i][j] is the distance from city i to city j
 
 
-def permute(given_cities):
-    """Returns all permutations of the given list of cities."""
-    return list(permutations(given_cities))
-
-
 def get_city_distance(city1, city2):
     """Returns the distance between two cities."""
-    i = city_names.index(city1)  # index of city1 : a in [a, b, c] = 0
-    j = city_names.index(city2)  # index of city2 : c in [a, b, c] = 2
-
-    return matrix[i][j]
+    return matrix[city1][city2]
 
 
 def get_path_distance(path, verbose=False):
@@ -35,13 +26,13 @@ def get_path_distance(path, verbose=False):
 
     # all cities in a permutation
     for i, city in enumerate(path):
-        next_city = path[(i + 1) % num_cities]  # wraps around to first
-        dist = get_city_distance(city, next_city)
-        total_distance += float(dist)
+        next_city = path[(i + 1) % num_cities]
+        distance = get_city_distance(city, next_city)
+        total_distance += distance
 
         # display in terminal
         if verbose:
-            print(f"\t{city:8}\t-> {dist} ->\t{next_city},")
+            print(f"\t{city:8}\t-> {distance} ->\t{next_city},")
 
     return total_distance
 
@@ -73,12 +64,12 @@ def measure_runtime(function, n, step=1):
 
     for i in range(1, n + 1, step):
         if function.__name__ == "exhaustive_search":
-            data = city_names[:i].copy()  # because factorial takes forever = becomes subset of original
+            cities = list(range(i))
         else:
-            data = city_names.copy()
+            cities = list(range(len(city_names)))
 
         start = time.time()
-        res = function(data)
+        res = function(cities)
         end = time.time()
 
         time_taken = end - start

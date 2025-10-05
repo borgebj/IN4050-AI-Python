@@ -1,12 +1,11 @@
 import matplotlib.pyplot as plt
-import numpy as np
 from utils import format_time, measure_runtime, extrapolate_runtime
+from utils import city_names
 
-
-#Map of Europe
+# Map of Europe
 europe_map = plt.imread('map.png')
 
-#Lists of city coordinates
+# Lists of city coordinates
 city_coords = {
     "Barcelona": [2.154007, 41.390205], "Belgrade": [20.46, 44.79], "Berlin": [13.40, 52.52],
     "Brussels": [4.35, 50.85], "Bucharest": [26.10, 44.44], "Budapest": [19.04, 47.50],
@@ -16,7 +15,6 @@ city_coords = {
     "Munich": [11.58, 48.14], "Paris": [2.35, 48.86], "Prague": [14.42, 50.07],
     "Rome": [12.50, 41.90], "Saint Petersburg": [30.31, 59.94], "Sofia": [23.32, 42.70],
     "Stockholm": [18.06, 60.33], "Vienna": [16.36, 48.21], "Warsaw": [21.02, 52.24]}
-
 
 
 def plot_plan(city_order):
@@ -29,7 +27,7 @@ def plot_plan(city_order):
     # Map (long, lat) to (x, y) for plotting
     for index in range(len(city_order) - 1):
         current_city_coords = city_coords[city_order[index]]
-        next_city_coords = city_coords[city_order[index+1]]
+        next_city_coords = city_coords[city_order[index + 1]]
         x, y = current_city_coords[0], current_city_coords[1]
 
         # Plotting a line to the next city
@@ -46,10 +44,9 @@ def plot_plan(city_order):
 
     # Plotting a marker and index for the final city
     ax.plot(next_x, next_y, 'ok', markersize=5)
-    ax.text(next_x, next_y, index+1, fontsize=12)
+    ax.text(next_x, next_y, index + 1, fontsize=12)
 
     return fig, ax
-
 
 
 def plot_times(measured, extrapolated, function):
@@ -77,7 +74,7 @@ def plot_times(measured, extrapolated, function):
 
 def plotter(LIMIT, MAX_EXTRAPOLATE, path, function, extrapolate=True):
     """Does the actual plotting + optional extrapolation"""
-    
+
     if extrapolate:
         # 1. Measure
         times_measured = measure_runtime(function, LIMIT, step=1)
@@ -99,15 +96,13 @@ def plotter(LIMIT, MAX_EXTRAPOLATE, path, function, extrapolate=True):
     show_all_figures()
 
 
-
-
 def show_all_figures():
     plt.show()
 
 
 if __name__ == "__main__":
-    #Example usage of the plotting-method.
-    plan = list(city_coords.keys()) # Gives us the cities in alphabetic order
+    # Example usage of the plotting-method.
+    plan = list(city_coords.keys())  # Gives us the cities in alphabetic order
     print(plan)
     plot_plan(plan)
     show_all_figures()

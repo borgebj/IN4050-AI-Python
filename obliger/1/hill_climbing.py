@@ -40,13 +40,18 @@ def hill_climb(cities, verbose=False):
     while True:
         neighbors = generate_neighbors(start)
 
+        # find the smallest value of neighbors based on 'get_path_distance'
         best_neighbor = min(neighbors, key=get_path_distance)
         best_distance = get_path_distance(best_neighbor)
 
+        # display in terminal
         if verbose:
-            print(f"\n[{step}] Start: {start} ({current_shortest:.2f})")
-            print(f"[{step}] Best:  {best_neighbor} ({best_distance:.2f})\n")
+            start_names = [city_names[i] for i in start]
+            best_names = [city_names[i] for i in best_neighbor]
+            print(f"\n[{step}] Start: {start_names} ({current_shortest:.2f})")
+            print(f"[{step}] Best:  {best_names} ({best_distance:.2f})\n")
 
+        # if shorter path exists: continue, else STOP
         if best_distance < current_shortest:
             start = best_neighbor
             current_shortest = best_distance
@@ -61,10 +66,10 @@ def main():
 
     # main flags
     verbose = False
-    LIMIT = 8  # 24 max
+    LIMIT = 24  # 24 max
 
     # limits no. cities
-    cities = city_names[:LIMIT]
+    cities = list(range(LIMIT))  # represents cities as indexes
 
     # finds the shortest path in regard to neighboring paths
     start = time.time()
@@ -72,7 +77,8 @@ def main():
     end = time.time()
 
     # prints info on main run
-    path_str = ' -> '.join(path) + f" -> {path[0]}"
+    path_names = [city_names[i] for i in path]
+    path_str = ' -> '.join(path_names) + f" -> {path_names[0]}"
     print(f"\nShortest path:\n>\t{path_str}\nwith distance:\n>\t{distance:.4f}")
     print(f"Total neighbors visited:\n>\t{step + 1}")
     print(f"Time taken for {LIMIT} cities:\n>\t{format_time(end - start)}\n")
@@ -82,7 +88,7 @@ def main():
     plotter(
         LIMIT=12,
         MAX_EXTRAPOLATE=24,
-        path=path,
+        path=[city_names[i] for i in path],
         function=hill_climb,
         extrapolate=True
     )

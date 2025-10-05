@@ -1,7 +1,7 @@
-from utils import city_names, permute, get_path_distance, format_time
-from plotter import plotter
+from utils import city_names, get_path_distance, format_time
+from plotter import plotter, show_all_figures
+from itertools import permutations
 import time
-import math
 
 
 # <----------- MAIN OPTIMIZATION FUNCTION ----------> #
@@ -11,16 +11,15 @@ def exhaustive_search(cities, verbose=False):
 
     cities: all cities we want to permute
     """
-
-    city_perms = permute(cities)
-
     shortest_distance = float("inf")
     shortest_path = None
 
-    # all permutations
-    for permutation in city_perms:
+    num_perms = 0   # permutation counter
+    for permutation in permutations(cities):
+        num_perms += 1
 
         total_distance = get_path_distance(permutation, verbose)
+        # total_distance = sum(matrix[c_k][c_((k+1)mod n))], n-1, k=0
 
         # compare shortest
         if total_distance < shortest_distance:
@@ -29,34 +28,29 @@ def exhaustive_search(cities, verbose=False):
 
         # display in terminal
         if verbose:
-            print(f"Total distance: {total_distance:.4f} km\n")
+            print(f"\nTotal distance: {total_distance:.4f} km")
 
-    if verbose:
-        path = ' -> '.join(shortest_path) + f" -> {shortest_path[0]}"
-        print(f"\nShortest path:\n>\t{path}\nwith distance:\n>\t{shortest_distance:.4f}")
-        print(f"Number of permutations checked:\n>\t{format(len(city_perms), ',d')}\n")
-
-    return list(shortest_path), shortest_distance
+    return list(shortest_path), shortest_distance, num_perms
 
 
 def main():
-
     # main flags
-    verbose = False
-    LIMIT = 10  # 24 max
+    verbose = True
+    LIMIT = 3  # 24 max
 
     # limits no. cities
-    cities = city_names[:LIMIT]
+    cities = list(range(LIMIT))  # represents cities as indexes
 
     # all permutations, then finds shortest among all
     start = time.time()
-    path, distance = exhaustive_search(cities, verbose=verbose)
+    path, distance, num_perms = exhaustive_search(cities, verbose=verbose)
     end = time.time()
 
     # prints info on main run
-    path_str = ' -> '.join(path) + f" -> {path[0]}"
+    # indices turned back to string
+    path_names = [city_names[i] for i in path]
+    path_str = ' -> '.join(path_names) + f" -> {path_names[0]}"
     print(f"\nShortest path:\n>\t{path_str}\nwith distance:\n>\t{distance:.4f}")
-    num_perms = math.factorial(len(city_names))
     print(f"Number of permutations checked:\n>\t{format(num_perms, ',d')}")
     print(f"Time taken for {LIMIT} cities:\n>\t{format_time(end - start)}\n")
 
@@ -65,10 +59,12 @@ def main():
     plotter(
         LIMIT=10,
         MAX_EXTRAPOLATE=24,
-        path=path,
+        path=[city_names[i] for i in path],
         function=exhaustive_search,
         extrapolate=True
     )
+
+    show_all_figures()
 
 
 if __name__ == "__main__":
