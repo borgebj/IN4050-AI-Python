@@ -1,4 +1,4 @@
-from utils import city_names, get_path_distance, format_time
+from utils import city_names, path_distance, format_time
 from plotter import plotter
 import time
 import random
@@ -34,15 +34,15 @@ def hill_climb(cities, verbose=False):
 
     # chooses an arbitrary (random) start, as well as its distance
     start = generate_start(cities)
-    current_shortest = get_path_distance(start)
+    current_shortest = path_distance(start)
 
     step = 0  # step counter
     while True:
         neighbors = generate_neighbors(start)
 
         # find the smallest value of neighbors based on 'get_path_distance'
-        best_neighbor = min(neighbors, key=get_path_distance)
-        best_distance = get_path_distance(best_neighbor)
+        best_neighbor = min(neighbors, key=path_distance)
+        best_distance = path_distance(best_neighbor)
 
         # display in terminal
         if verbose:

@@ -14,12 +14,12 @@ with open("european_cities.csv", "r") as f:
     # matrix[i][j] is the distance from city i to city j
 
 
-def get_city_distance(city1, city2):
+def city_distance(city1, city2):
     """Returns the distance between two cities."""
     return matrix[city1][city2]
 
 
-def get_path_distance(path, verbose=False):
+def path_distance(path, verbose=False):
     """Calculates the total distance of the given path."""
     total_distance = 0
     num_cities = len(path)
@@ -27,7 +27,7 @@ def get_path_distance(path, verbose=False):
     # all cities in a permutation
     for i, city in enumerate(path):
         next_city = path[(i + 1) % num_cities]
-        distance = get_city_distance(city, next_city)
+        distance = city_distance(city, next_city)
         total_distance += distance
 
         # display in terminal
@@ -40,7 +40,7 @@ def get_path_distance(path, verbose=False):
 # ====================== TIMING ======================= #
 
 def format_time(seconds):
-    """Used to display times from extraploated values"""
+    """Used to display times from extrapolated values"""
     if seconds < 60:
         return f"{seconds:.4f} s"
     minutes = seconds / 60
