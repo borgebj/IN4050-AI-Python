@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from utils import format_time, measure_runtime, extrapolate_runtime
+from utils import format_time, measure_runtime, extrapolate_exhaustive
 from utils import city_names
 
 # Map of Europe
@@ -46,11 +46,11 @@ def plot_plan(city_order):
     ax.plot(next_x, next_y, 'ok', markersize=5)
     ax.text(next_x, next_y, index + 1, fontsize=12)
 
-    return fig, ax
+    plt.show()
 
 
 def plot_times(measured, extrapolated, function):
-    """Plots measured and extrapolated times on a graph"""
+    """Plots measured and extrapolated times on a graph and displays it"""
     fig, ax = plt.subplots()
 
     measured_x = [t[0] for t in measured]
@@ -69,19 +69,18 @@ def plot_times(measured, extrapolated, function):
     ax.legend()
     ax.grid(True, which='both', ls='--')
 
-    return fig, ax
+    plt.show()
 
 
-def plotter(LIMIT, MAX_EXTRAPOLATE, path, function, extrapolate=True):
+def plot_extrapolation(limit, max_extrapolate, function, extrapolate=True):
     """Does the actual plotting + optional extrapolation"""
 
     if extrapolate:
         # 1. Measure
-        times_measured = measure_runtime(function, LIMIT, step=1)
+        times_measured = measure_runtime(function, limit, step=1)
 
         # 2. Extrapolate
-        function_name = function.__name__
-        times_extrapolated, predict = extrapolate_runtime(times_measured, MAX_EXTRAPOLATE, function_name)
+        times_extrapolated, predict = extrapolate_exhaustive(times_measured, max_extrapolate)
 
         print("\nPredicted times for values:\n")
         for n in [5, 10, 15, 20, 24, 28, 32, 36, 40, 44, 48]:
@@ -91,18 +90,9 @@ def plotter(LIMIT, MAX_EXTRAPOLATE, path, function, extrapolate=True):
         # 3. Plot measured + extrapolated times
         plot_times(times_measured, times_extrapolated, function)
 
-    # plot plan, picture of path
-    plot_plan(path)
-    show_all_figures()
-
-
-def show_all_figures():
-    plt.show()
-
 
 if __name__ == "__main__":
     # Example usage of the plotting-method.
     plan = list(city_coords.keys())  # Gives us the cities in alphabetic order
     print(plan)
     plot_plan(plan)
-    show_all_figures()

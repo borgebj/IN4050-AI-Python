@@ -1,5 +1,5 @@
 from utils import city_names, path_distance, format_time
-from plotter import plotter, show_all_figures
+from plotter import plot_extrapolation, plot_plan
 from itertools import permutations
 import time
 
@@ -14,7 +14,7 @@ def exhaustive_search(cities, verbose=False):
     shortest_distance = float("inf")
     shortest_path = None
 
-    num_perms = 0   # permutation counter
+    num_perms = 0  # permutation counter
     for permutation in permutations(cities):
         num_perms += 1
 
@@ -35,8 +35,8 @@ def exhaustive_search(cities, verbose=False):
 
 def main():
     # main flags
-    verbose = True
-    LIMIT = 3  # 24 max
+    verbose = False
+    LIMIT = 8  # 24 max
 
     # limits no. cities
     cities = list(range(LIMIT))  # represents cities as indexes
@@ -50,21 +50,22 @@ def main():
     # indices turned back to string
     path_names = [city_names[i] for i in path]
     path_str = ' -> '.join(path_names) + f" -> {path_names[0]}"
-    print(f"\nShortest path:\n>\t{path_str}\nwith distance:\n>\t{distance:.4f}")
-    print(f"Number of permutations checked:\n>\t{format(num_perms, ',d')}")
-    print(f"Time taken for {LIMIT} cities:\n>\t{format_time(end - start)}\n")
+    print("\n=== Results ===\n")
+    print(f"Shortest path:\n    {path_str}\n")
+    print(f"Distance:\n    {distance:.4f}\n")
+    print(f"Number of permutations checked:\n    {format(num_perms, ',d')}\n")
+    print(f"Time taken for {LIMIT} cities:\n    {format_time(end - start)}\n")
 
     # ============ EXTRA =========== #
+    plot_plan(path_names)
+    print("\n\n\n")
 
-    plotter(
-        LIMIT=10,
-        MAX_EXTRAPOLATE=24,
-        path=[city_names[i] for i in path],
+    plot_extrapolation(
+        limit=10,
+        max_extrapolate=24,
         function=exhaustive_search,
         extrapolate=True
     )
-
-    show_all_figures()
 
 
 if __name__ == "__main__":

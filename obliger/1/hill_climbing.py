@@ -1,5 +1,5 @@
 from utils import city_names, path_distance, format_time
-from plotter import plotter
+from plotter import plot_extrapolation, plot_plan
 import time
 import random
 
@@ -29,7 +29,8 @@ def generate_neighbors(path):
 
 
 def hill_climb(cities, verbose=False):
-    """Finds the shortest path among the (one) given permutations of cities generated at start.
+    """
+    Finds the shortest path among the (one) given permutations of cities generated at start.
     """
 
     # chooses an arbitrary (random) start, as well as its distance
@@ -62,11 +63,35 @@ def hill_climb(cities, verbose=False):
     return start, current_shortest, step
 
 
-def main():
+def run_statistics(function, cities):
+    """
+    Does 20 runs, prints worst and mean distances, plots the middle run
+    """
+    runs = 20
+    distances = []
 
+    # does 20 runs, saves distances
+    for i in range(runs):
+        path, distance, step = function(cities)
+        distances.append(distance)
+
+        # plot the middle
+        if i == runs // 2:
+            # turn indices back to string
+            path_names = [city_names[i] for i in path]
+            plot_plan(path_names)
+
+    worst = max(distances)
+    mean = sum(distances) / runs
+
+    print(f"Worst distance over {runs} runs: {worst:.4f}")
+    print(f"Mean distance over {runs} runs:  {mean:.4f}")
+
+
+def main():
     # main flags
     verbose = False
-    LIMIT = 24  # 24 max
+    LIMIT = 10  # 24 max
 
     # limits no. cities
     cities = list(range(LIMIT))  # represents cities as indexes
@@ -79,19 +104,14 @@ def main():
     # prints info on main run
     path_names = [city_names[i] for i in path]
     path_str = ' -> '.join(path_names) + f" -> {path_names[0]}"
-    print(f"\nShortest path:\n>\t{path_str}\nwith distance:\n>\t{distance:.4f}")
-    print(f"Total neighbors visited:\n>\t{step + 1}")
-    print(f"Time taken for {LIMIT} cities:\n>\t{format_time(end - start)}\n")
+    print("\n=== Results ===\n")
+    print(f"Shortest path:\n    {path_str}\n")
+    print(f"Distance:\n    {distance:.4f}\n")
+    print(f"Total neighbors visited:\n    {step + 1}\n")
+    print(f"Time taken for {LIMIT} cities:\n    {format_time(end - start)}\n")
 
-    # ============ EXTRA =========== #
-
-    plotter(
-        LIMIT=12,
-        MAX_EXTRAPOLATE=24,
-        path=[city_names[i] for i in path],
-        function=hill_climb,
-        extrapolate=True
-    )
+    # statistics (worst, mean) + plot
+    run_statistics(hill_climb, cities)
 
 
 if __name__ == "__main__":

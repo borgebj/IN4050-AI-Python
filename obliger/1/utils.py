@@ -63,10 +63,7 @@ def measure_runtime(function, n, step=1):
     times = []
 
     for i in range(1, n + 1, step):
-        if function.__name__ == "exhaustive_search":
-            cities = list(range(i))
-        else:
-            cities = list(range(len(city_names)))
+        cities = list(range(i))
 
         start = time.time()
         res = function(cities)
@@ -76,18 +73,6 @@ def measure_runtime(function, n, step=1):
         times.append((i, time_taken))
 
     return times
-
-
-def extrapolate_runtime(times, n, method: Literal["hill_climb", "exhaustive_search"]):
-    """Chooses which function to extrapolate"""
-    if method == "hill_climb":
-        extrapolated_times, predict = extrapolate_hill(times, n)  # linear
-    elif method == "exhaustive_search":
-        extrapolated_times, predict = extrapolate_exhaustive(times, n)  # log-log factorial
-    else:
-        raise ValueError("Unknown method")
-
-    return extrapolated_times, predict
 
 
 def extrapolate_exhaustive(times, n):
@@ -126,35 +111,3 @@ def extrapolate_exhaustive(times, n):
         return np.exp(slope * math.log(math.factorial(n)) + intercept)
 
     return extrapolate_times, predict
-
-
-def extrapolate_hill(times, n):
-    """Extrapolates time taken for n cities based on measured times
-        Uses a linear fit.
-        Created with the help of ChatGPT 4 (my idea, gpts implementation)
-
-        Linear fits best, as growth is not as fast as in factorial time, but roughly n*(n-1)/2 per step
-
-       Returns extrapolated times and a prediction function.
-    """
-    n_vals = np.array([t[0] for t in times])
-    t_vals = np.array([t[1] for t in times])
-
-    # Linear regression: T ~ a*n + b
-    coeff = np.polyfit(n_vals, t_vals, 1)
-    a, b = coeff
-
-    print(f"\n === Hill Climb Linear Extrapolation Model ===")
-    print(f"Fitted model: T(n) = {a:.6f}*n + {b:.6f}")
-
-    # extrapolated times
-    extrapolated_times = []
-    for i in range(n_vals[-1] + 1, n + 1):
-        t_i = a * i + b
-        extrapolated_times.append((i, t_i))
-
-    # prediction function
-    def predict(n):
-        return a * n + b
-
-    return extrapolated_times, predict
