@@ -9,7 +9,7 @@ def exhaustive_search(cities, verbose=False):
     """Finds the shortest path among the given permutations of cities
     Uses 'Exhaustive Search'
 
-    cities: all cities we want to permute
+    cities: list of city indices
     """
     shortest_distance = float("inf")
     shortest_path = None
@@ -36,7 +36,7 @@ def exhaustive_search(cities, verbose=False):
 def main():
     # main flags
     verbose = False
-    LIMIT = 8  # 24 max
+    LIMIT = 10  # 24 max
 
     # limits no. cities
     cities = list(range(LIMIT))  # represents cities as indexes

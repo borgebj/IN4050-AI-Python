@@ -1,7 +1,7 @@
 from utils import city_names, path_distance, format_time
-from plotter import plot_extrapolation, plot_plan
-import time
+from plotter import plot_plan
 import random
+import time
 
 
 # <----------- MAIN OPTIMIZATION FUNCTIONS ----------> #
@@ -12,7 +12,11 @@ def generate_start(cities):
 
 
 def generate_neighbors(path):
-    """Generates neighboring paths by swapping two cities in the current path."""
+    """
+    Generates neighboring paths by swapping two cities in the current path.
+    
+    cities: list of city indices
+    """
 
     neighbors = []
     cities = len(path)
@@ -31,6 +35,8 @@ def generate_neighbors(path):
 def hill_climb(cities, verbose=False):
     """
     Finds the shortest path among the (one) given permutations of cities generated at start.
+
+    cities: list of city indices
     """
 
     # chooses an arbitrary (random) start, as well as its distance
@@ -91,7 +97,7 @@ def run_statistics(function, cities):
 def main():
     # main flags
     verbose = False
-    LIMIT = 10  # 24 max
+    LIMIT = 24  # 24 max
 
     # limits no. cities
     cities = list(range(LIMIT))  # represents cities as indexes
