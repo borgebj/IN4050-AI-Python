@@ -75,11 +75,15 @@ def run_statistics(function, cities):
     """
     runs = 20
     distances = []
+    best_distance = float('inf')
 
     # does 20 runs, saves distances
     for i in range(runs):
         path, distance, step = function(cities)
         distances.append(distance)
+
+        if distance < best_distance:
+            best_distance = distance
 
         # plot the middle
         if i == runs // 2:
@@ -92,6 +96,7 @@ def run_statistics(function, cities):
 
     print(f"Worst distance over {runs} runs: {worst:.4f}")
     print(f"Mean distance over {runs} runs:  {mean:.4f}")
+    print(f"Best distance over {runs} runs: {best_distance:.4f}")
 
 
 def main():
