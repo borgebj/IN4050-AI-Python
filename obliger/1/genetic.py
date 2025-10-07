@@ -141,18 +141,17 @@ def tournament_selection(population, rng, k=3):
 def genetic_algorithm(cities, seed=None, verbose=False):
     """
     Main GA function
-    With elitism, ordered crossover, mutation mix, fixed generations
-    as a generational model
-
-    params:but if its
-        cities: list of city indices
+    implementing generational model with:
+    - Elitism (top ~10%)
+    - Ordered Crossover (OX)
+    - Mix of mutation operators (swap, inversion, shuffle)
+    - Fixed max generation (based on N)
     """
     rng = random.Random(seed)  # for reproducibility
 
-    # params:
+    # Hyperparameters:
     n = len(cities)
     pop_size = min(10, n * 10) # keep a relatively large population
-    generations = 500                           # 500 gens as termination
     tournament_k = n//6                         # k random looked at for parents
     crossover_prob = 0.9                        # 90% crossover chance
     mutation_prob = 0.2                         # 20% mutation chance
@@ -171,6 +170,7 @@ def genetic_algorithm(cities, seed=None, verbose=False):
         print(f"\nBest:\n{overall_best}\n")
 
 
+    # termination condition : generational loop
     for generation in range(1, max_generations + 1):
 
         # Step 2 - elitism - keeps top ~10% of best solutions
@@ -235,13 +235,13 @@ def genetic_algorithm(cities, seed=None, verbose=False):
             print(f"Gen best:   {gen_best}")
 
 
-    return overall_best.path, overall_best.distance, generations
+    return overall_best.path, overall_best.distance, max_generations
 
 
 def main():
     # main flags
     verbose = True
-    limit = 4
+    limit = 16
     seed = random.randint(0, 2**16 - 1)     # best seed: 11131 (12594.19)
 
     # limits no. cities
@@ -255,14 +255,14 @@ def main():
     # prints info on main run
     path_names = [city_names[i] for i in path]
     path_str = ' -> '.join(path_names) + f" -> {path_names[0]}"
-    print(f"\n\n\nShortest path:\n>\t{path_str}\nwith distance:\n>\t{distance:.4f}")
-    print(f"Number of epochs:\n>\t{epoch}")
-    print(f"Seed used:\n>\t{seed}")
+    print(f"\n\n\nShortest path:\n>\t{path_str}\n\nwith distance:\n>\t{distance:.4f}\n")
+    print(f"Number of generations:\n>\t{epoch}\n")
     print(f"Time taken for {limit} cities:\n>\t{format_time(end - start)}\n")
+    print(f"Seed used:\n>\t{seed}\n")
 
 
     # ============ EXTRA =========== #
-    #plot_plan(path_names)
+    plot_plan(path_names)
 
 
 if __name__ == "__main__":
