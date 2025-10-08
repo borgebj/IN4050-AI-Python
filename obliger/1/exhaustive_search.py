@@ -58,7 +58,6 @@ def main():
 
     # ============ EXTRA =========== #
     plot_plan(path_names)
-    print("\n\n\n")
 
     plot_extrapolation(
         limit=10,
