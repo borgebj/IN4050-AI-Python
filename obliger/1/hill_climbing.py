@@ -69,34 +69,51 @@ def hill_climb(cities, verbose=False):
     return start, current_shortest, step
 
 
-def run_statistics(function, cities):
+def run_statistics(function):
     """
     Does 20 runs, prints worst and mean distances, plots the middle run
     """
     runs = 20
-    distances = []
-    best_distance = float('inf')
 
-    # does 20 runs, saves distances
-    for i in range(runs):
-        path, distance, step = function(cities)
-        distances.append(distance)
+    print("\n=== Statistics ===")
 
-        if distance < best_distance:
-            best_distance = distance
+    # runs hill with 20 and 24 cities
+    for limit in [20, 24]:
+        cities = list(range(limit))
 
-        # plot the middle
-        if i == runs // 2:
-            # turn indices back to string
-            path_names = [city_names[i] for i in path]
-            plot_plan(path_names)
+        best_distance = float('inf')
+        best_path = None
+        distances = []
 
-    worst = max(distances)
-    mean = sum(distances) / runs
+        # run 20 times
+        for run in range(runs):
+            path, distance, step = function(cities)
+            distances.append(distance)
 
-    print(f"Worst distance over {runs} runs: {worst:.4f}")
-    print(f"Mean distance over {runs} runs:  {mean:.4f}")
-    print(f"Best distance over {runs} runs: {best_distance:.4f}")
+            # get best
+            if distance < best_distance:
+                best_distance = distance
+                best_path = path
+
+        # plot best
+        path_names = [city_names[i] for i in best_path]
+        plot_plan(path_names)
+
+        # calculate statistics
+        worst = max(distances)
+        mean = sum(distances) / runs
+
+        # square each deviation
+        deviations = [((distance - mean) ** 2) for distance in distances]
+        variance = sum(deviations) / (len(distances) - 1)
+        standard_deviation = variance ** 0.5
+
+        # display statistics
+        print(f"\n== {limit} cities ==")
+        print(f"Worst distance over {runs} runs: {worst:15.4f}")
+        print(f"Mean  distance over {runs} runs: {mean:15.4f}")
+        print(f"Best  distance over {runs} runs: {best_distance:15.4f}")
+        print(f"Standard deviation over {runs} runs: {standard_deviation:11.4f}")
 
 
 def main():
@@ -122,7 +139,7 @@ def main():
     print(f"Time taken for {LIMIT} cities:\n    {format_time(end - start)}\n")
 
     # statistics (worst, mean) + plot
-    run_statistics(hill_climb, cities)
+    run_statistics(hill_climb)
 
 
 if __name__ == "__main__":

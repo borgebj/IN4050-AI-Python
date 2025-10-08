@@ -58,11 +58,11 @@ def format_time(seconds):
     return f"{years:.4f} y"
 
 
-def measure_runtime(function, n, step=1):
+def measure_runtime(function, n):
     """Gets runtime of given function for values 1 to n cities (n!)"""
     times = []
 
-    for i in range(1, n + 1, step):
+    for i in range(1, n + 1):
         cities = list(range(i))
 
         start = time.time()
@@ -77,37 +77,30 @@ def measure_runtime(function, n, step=1):
 
 def extrapolate_exhaustive(times, n):
     """Extrapolates time taken for n cities based on measured times
-        Uses linear regression on log-log scale
-        Created with the help of ChatGPT 4 (my idea, gpts implementation)
+        Does so by calculating how much time used per permutation,
+        averaging all for an estimated constant factor
 
         Returns extrapolated times and a function to predict any n
     """
-    n_vals = np.array([t[0] for t in times])
-    t_vals = np.array([t[1] for t in times])
+    x = np.array([t[0] for t in times])  # x vals (no. cities)
+    y = np.array([t[1] for t in times])  # y vals (time in s)
 
-    # remove zero times because of log-log
-    mask = t_vals > 0
-    n_vals = n_vals[mask]
-    t_vals = t_vals[mask]
+    # k = time / n!
+    # how much time per permutation
+    k_values = [y / math.factorial(x) for x, y in zip(x, y)]
 
-    # log-log scale
-    log_nfact = np.log([math.factorial(n) for n in n_vals])
-    log_t = np.log(t_vals)
-
-    coeff = np.polyfit(log_nfact, log_t, 1)
-    slope, intercept = coeff
+    # average all per-permutation times for extrapolation
+    k = np.mean(k_values)
 
     print(f"\n === Extrapolation Model ===")
-    print(f"Fitted model: log(T) = {slope:.3f} * log(n!) + {intercept:.3f}")
+    print(f"Time(x) = {k} * x!")
 
-    # extrapolation
-    extrapolate_times = []
-    for i in range(n_vals[-1] + 1, n + 1):
-        log_t_n = slope * math.log(math.factorial(i)) + intercept  # <-- uses extrapolation function with log(n!)
-        t_n = np.exp(log_t_n)
-        extrapolate_times.append((i, t_n))
+    def predict(x):
+        return k * math.factorial(x)
 
-    def predict(n):
-        return np.exp(slope * math.log(math.factorial(n)) + intercept)
+    extrapolate_times = [
+        (i, predict(i)) for i in range(max(x)+1, n+1)
+    ]
 
     return extrapolate_times, predict
+

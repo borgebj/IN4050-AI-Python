@@ -76,8 +76,8 @@ def plot_extrapolation(limit, max_extrapolate, function, extrapolate=True):
     """Does the actual plotting + optional extrapolation"""
 
     if extrapolate:
-        # 1. Measure
-        times_measured = measure_runtime(function, limit, step=1)
+        # 1. Measure up to limit
+        times_measured = measure_runtime(function, limit)
 
         # 2. Extrapolate
         times_extrapolated, predict = extrapolate_exhaustive(times_measured, max_extrapolate)
