@@ -1,6 +1,6 @@
+# from statistics import measure_runtime, extrapolate_exhaustive
 import matplotlib.pyplot as plt
-from utils import format_time, measure_runtime, extrapolate_exhaustive
-from utils import city_names
+from utils import format_time
 
 # Map of Europe
 europe_map = plt.imread('map.png')
@@ -18,9 +18,6 @@ city_coords = {
 
 
 def plot_plan(city_order):
-    """Plots given plan (list of city names) on the map."""
-    assert city_order is not None
-
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.imshow(europe_map, extent=[-14.56, 38.43, 37.697 + 0.3, 64.344 + 2.0], aspect="auto")
 
@@ -32,19 +29,22 @@ def plot_plan(city_order):
 
         # Plotting a line to the next city
         next_x, next_y = next_city_coords[0], next_city_coords[1]
-        ax.plot([x, next_x], [y, next_y])
+        plt.plot([x, next_x], [y, next_y])
 
-        ax.plot(x, y, 'ok', markersize=5)
-        ax.text(x, y, index, fontsize=12)
+        plt.plot(x, y, 'ok', markersize=5)
+        plt.text(x, y, index, fontsize=12)
 
     # Finally, plotting from last to first city
     first_city_coords = city_coords[city_order[0]]
     first_x, first_y = first_city_coords[0], first_city_coords[1]
-    ax.plot([next_x, first_x], [next_y, first_y])
+    plt.plot([next_x, first_x], [next_y, first_y])
 
     # Plotting a marker and index for the final city
-    ax.plot(next_x, next_y, 'ok', markersize=5)
-    ax.text(next_x, next_y, index + 1, fontsize=12)
+    plt.plot(next_x, next_y, 'ok', markersize=5)
+    plt.text(next_x, next_y, index + 1, fontsize=12)
+
+    # title
+    ax.set_title(f"Tour for {len(city_order)} Cities", fontsize=24)
 
     plt.show()
 
@@ -70,25 +70,6 @@ def plot_times(measured, extrapolated, function):
     ax.grid(True, which='both', ls='--')
 
     plt.show()
-
-
-def plot_extrapolation(limit, max_extrapolate, function, extrapolate=True):
-    """Does the actual plotting + optional extrapolation"""
-
-    if extrapolate:
-        # 1. Measure up to limit
-        times_measured = measure_runtime(function, limit)
-
-        # 2. Extrapolate
-        times_extrapolated, predict = extrapolate_exhaustive(times_measured, max_extrapolate)
-
-        print("\nPredicted times for values:\n")
-        for n in [5, 10, 15, 20, 24, 28, 32, 36, 40, 44, 48]:
-            t_sec = float(predict(n))
-            print(f"{n:2d} cities: {format_time(t_sec)}")
-
-        # 3. Plot measured + extrapolated times
-        plot_times(times_measured, times_extrapolated, function)
 
 
 if __name__ == "__main__":

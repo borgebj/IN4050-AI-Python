@@ -1,6 +1,6 @@
 from utils import city_names, path_distance, format_time
+from statistics import run_statistics
 from plotter import plot_plan
-import numpy as np
 import random
 import time
 
@@ -158,7 +158,7 @@ def genetic_algorithm(cities, seed=None, verbose=False):
     sorted_population = sorted(population, key=lambda ind: ind.fitness, reverse=True)
     overall_best = sorted_population[0]
 
-    best_fitness_per_gen = []
+    fitness_stats = []
 
     if verbose:
         print(f"\nInitial population:")
@@ -220,7 +220,7 @@ def genetic_algorithm(cities, seed=None, verbose=False):
 
         # Step 4 - update best solution
         gen_best = max(population, key=lambda ind: ind.fitness)
-        best_fitness_per_gen.append(gen_best.fitness)
+        fitness_stats.append((generation, gen_best.fitness))
 
         if gen_best.fitness > overall_best.fitness:
             overall_best = gen_best
@@ -228,22 +228,7 @@ def genetic_algorithm(cities, seed=None, verbose=False):
         if verbose:
             print(f"Gen best:   {gen_best}")
 
-    return overall_best.path, overall_best.distance, best_fitness_per_gen
-
-def run_statistics(cities, all_fitnesses):
-    pop_sizes = [30, 60, 120]
-    num_runs = 20
-
-    for pop_size in pop_sizes:
-        distances = []
-        fitnesses = []
-
-        start_time = time.time()
-
-        for run in range(num_runs):
-            seed = run
-            path, distance, fitness_curve = genetic_algorithm(cities, seed)
-
+    return overall_best.path, overall_best.distance, fitness_stats
 
 
 def main():
@@ -269,8 +254,7 @@ def main():
     print(f"Seed used:\n>\t{seed}\n")
 
     # ============ EXTRA =========== #
-    plot_plan(path_names)
-    run_statistics(cities, best_fitness_gens)
+    run_statistics(genetic_algorithm)
 
 
 if __name__ == "__main__":
