@@ -73,7 +73,8 @@ def plot_extrapolation(limit, max_extrapolate, function, extrapolate=True):
 
 def run_statistics(function, name):
     """
-    Does 20 runs, prints worst and mean distances, plots the middle run
+    Does 20 runs, prints best, worst, mean distances and standard deviation.
+    plots the bet run
     Assumes function is passed with arguments, makes it easier to call
     args:  (cities, pop_size)
     """
