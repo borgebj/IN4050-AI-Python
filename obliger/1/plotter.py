@@ -1,6 +1,7 @@
 # from statistics import measure_runtime, extrapolate_exhaustive
 import matplotlib.pyplot as plt
-from utils import format_time
+import os
+
 
 # Map of Europe
 europe_map = plt.imread('map.png')
@@ -46,7 +47,13 @@ def plot_plan(city_order, title):
     # title
     ax.set_title(title, fontsize=24)
 
-    plt.show()
+    # saves plot to data folder
+    file_title = title.replace("-", "").replace(":", "").replace(" ", "_")
+    filename = f"{file_title}.png"
+    os.makedirs("data", exist_ok=True)
+    path = os.path.join("data", filename)
+    fig.savefig(path)
+    plt.close(fig)
 
 
 def plot_times(measured, extrapolated, function):
@@ -65,15 +72,21 @@ def plot_times(measured, extrapolated, function):
     ax.set_xlabel('Number of cities (n)')
     ax.set_ylabel('Time (seconds, log scale)')
     fun_name = function.__name__.replace('_', ' ').title()
-    ax.set_title(f'{fun_name} Runtime: Measured vs Extrapolated')
+    title = f"{fun_name} Runtime: Measured vs Extrapolated"
+    ax.set_title(title, fontsize=16)
     ax.legend()
     ax.grid(True, which='both', ls='--')
 
-    plt.show()
+    # Save plot to data folder
+    file_title = f"ES_Extrapolation_{2}"
+    os.makedirs("data", exist_ok=True)
+    path = os.path.join("data", f"{file_title}.png")
+    fig.savefig(path)
+    plt.close(fig)
 
 
 if __name__ == "__main__":
     # Example usage of the plotting-method.
     plan = list(city_coords.keys())  # Gives us the cities in alphabetic order
     print(plan)
-    plot_plan(plan)
+    plot_plan(plan, "test")

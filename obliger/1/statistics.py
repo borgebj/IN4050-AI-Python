@@ -81,7 +81,8 @@ def run_statistics(function, name):
     pop_size = ("" if "Hill" in name else name.split("/")[1])
     no_cities = name.split("/")[0].split()[-1]
     population = ("" if "Hill" in name else f", Population: {pop_size}")
-    title = f"Cities: {no_cities}{population}"
+    function_name = name.split()[0]
+    title = f"{function_name} Cities: {no_cities}{population}"
 
     print(f"\n=== Statistics for {name} ===")
 

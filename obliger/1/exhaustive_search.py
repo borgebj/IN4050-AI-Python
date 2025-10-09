@@ -58,7 +58,7 @@ def main():
     print(f"Time taken for {limit} cities:\n    {format_time(end - start)}\n")
 
     # ============ EXTRA =========== #
-    title = f"Cities: {limit}"
+    title = f"ES Cities: {limit}"
     plot_plan(path_names, title)
 
     plot_extrapolation(

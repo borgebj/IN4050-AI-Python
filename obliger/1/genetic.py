@@ -3,6 +3,7 @@ from statistics import run_statistics
 import matplotlib.pyplot as plt
 import random
 import time
+import os
 
 
 # <----------- MAIN OPTIMIZATION FUNCTIONS ----------> #
@@ -248,7 +249,7 @@ def plot_average_fitness(curves, labels):
     runs = len(curves[0])
 
     # one figure
-    plt.figure(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(8, 5))
 
     # curve_set = [run1, run2, run3]
     for i, (curve_set, label) in enumerate(zip(curves, labels)):
@@ -265,7 +266,7 @@ def plot_average_fitness(curves, labels):
         y = list(run_averages.values())
 
         # add this sets data to plot
-        plt.plot(
+        ax.plot(
             x, y,
             label=f"Pop. {label}",
             color=colors[i % len(colors)],
@@ -273,12 +274,20 @@ def plot_average_fitness(curves, labels):
             alpha=0.8
         )
 
-    plt.xlabel("Generation")
-    plt.ylabel("Average Distance")
-    plt.title("Average Distances Over Generations")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.show()
+    title = "Average Distances Over Generations"
+    ax.set_xlabel("Generation")
+    ax.set_ylabel("Average Distance")
+    ax.set_title(title)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    # saves plot to data folder
+    file_title = title.replace(" ", "_")
+    filename = f"{file_title}.png"
+    os.makedirs("data", exist_ok=True)
+    path = os.path.join("data", filename)
+    fig.savefig(path)
+    plt.close(fig)
 
 
 def main():
