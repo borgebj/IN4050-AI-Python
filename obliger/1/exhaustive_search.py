@@ -36,10 +36,10 @@ def exhaustive_search(cities, verbose=False):
 def main():
     # main flags
     verbose = False
-    LIMIT = 10  # 24 max
+    limit = 10  # 24 max
 
     # limits no. cities
-    cities = list(range(LIMIT))  # represents cities as indexes
+    cities = list(range(limit))  # represents cities as indexes
 
     # all permutations, then finds shortest among all
     start = time.time()
@@ -54,10 +54,11 @@ def main():
     print(f"Shortest path:\n    {path_str}\n")
     print(f"Distance:\n    {distance:.4f}\n")
     print(f"Number of permutations checked:\n    {format(num_perms, ',d')}\n")
-    print(f"Time taken for {LIMIT} cities:\n    {format_time(end - start)}\n")
+    print(f"Time taken for {limit} cities:\n    {format_time(end - start)}\n")
 
     # ============ EXTRA =========== #
-    plot_plan(path_names)
+    title = f"Cities: {limit}"
+    plot_plan(path_names, title)
 
     plot_extrapolation(
         limit=10,
