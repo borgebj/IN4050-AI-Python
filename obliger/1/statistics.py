@@ -73,13 +73,20 @@ def plot_extrapolation(limit, max_extrapolate, function, extrapolate=True):
 
 def run_statistics(function, name):
     """
-    Does 20 runs, prints worst and mean distances, plots the middle run
+    Does 20 runs, prints best, worst, mean distances and standard deviation.
+    plots the bet run
     Assumes function is passed with arguments, makes it easier to call
     args:  (cities, pop_size)
     """
-    runs = 20
+    # title creation
+    pop_size = ("" if "Hill" in name else name.split("/")[1])
+    no_cities = name.split("/")[0].split()[-1]
+    population = ("" if "Hill" in name else f", Population: {pop_size}")
+    title = f"Cities: {no_cities}{population}"
+
     print(f"\n=== Statistics for {name} ===")
 
+    runs = 20
     best_distance = float('inf')
     best_path = None
     distances = []
@@ -100,8 +107,8 @@ def run_statistics(function, name):
             best_path = path
 
     # plot best
-    path_names = [city_names[i] for i in best_path]
-    plot_plan(path_names)
+    path_names = [city_names[i] for i in best_path] # index -> string
+    plot_plan(path_names, title)
 
     # calculate statistics
     worst = max(distances)

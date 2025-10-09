@@ -160,6 +160,7 @@ def genetic_algorithm(cities, pop_size=None, seed=None, verbose=False):
     mutation_prob = 0.15  # 15% mutation chance
     elite_count = 0.1  # 0.1 as in 10% of best carries on
     max_generations = max(50, n * 15)  # max no. generations (e.g. 360 for 24 cities)
+    elite_count = 0.1  # 10% of best carries on
 
     # Step 1 - generate initial population
     population = generate_population(cities, pop_size, rng)
@@ -231,6 +232,7 @@ def genetic_algorithm(cities, pop_size=None, seed=None, verbose=False):
         gen_best = max(population, key=lambda ind: ind.fitness)
         fitness_stats.append((generation, round(gen_best.distance, 4)))
 
+        # save overall best from generation
         if gen_best.fitness > overall_best.fitness:
             overall_best = gen_best
 
@@ -238,6 +240,7 @@ def genetic_algorithm(cities, pop_size=None, seed=None, verbose=False):
             print(f"Gen best:   {gen_best}")
 
     return overall_best.path, overall_best.distance, fitness_stats
+
 
 def plot_average_fitness(curves, labels):
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
@@ -272,6 +275,7 @@ def plot_average_fitness(curves, labels):
 
     plt.xlabel("Generation")
     plt.ylabel("Average Distance")
+    plt.title("Average Distances Over Generations")
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.show()

@@ -17,7 +17,7 @@ city_coords = {
     "Stockholm": [18.06, 60.33], "Vienna": [16.36, 48.21], "Warsaw": [21.02, 52.24]}
 
 
-def plot_plan(city_order):
+def plot_plan(city_order, title):
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.imshow(europe_map, extent=[-14.56, 38.43, 37.697 + 0.3, 64.344 + 2.0], aspect="auto")
 
@@ -44,7 +44,7 @@ def plot_plan(city_order):
     plt.text(next_x, next_y, index + 1, fontsize=12)
 
     # title
-    ax.set_title(f"Tour for {len(city_order)} Cities", fontsize=24)
+    ax.set_title(title, fontsize=24)
 
     plt.show()
 
