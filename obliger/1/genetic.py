@@ -66,7 +66,8 @@ def generate_segment(size, rng=None):
     rng = rng or random
     if size < 2: return 0, size
 
-    segment_len = max(2, size // 2)  # max half length segment
+    # max half length segment
+    segment_len = max(2, size // 2)
 
     # anywhere within bounds
     start = rng.randint(0, size - segment_len)
@@ -125,7 +126,7 @@ def tournament_selection(population, rng, k=3):
     sample = rng.sample(population, k)
 
     # finds best, returns it
-    best = population[0]
+    best = sample[0]
     for ind in sample:
         if ind.fitness > best.fitness:
             best = ind
@@ -150,15 +151,15 @@ def genetic_algorithm(cities, pop_size=None, seed=None, verbose=False):
     # Hyperparameters:
     n = len(cities)
     if not pop_size:
-        pop_size = max(50, n * 5)   # population size
+        pop_size = max(50, n * 5)  # population size (e.g. 120 for 24 cities)
     if n < 10:
-        pop_size = max(10, n * 2)   # for smaller samples
+        pop_size = max(10, n * 2)  # for smaller samples
 
     tournament_k = n // 6  # k random looked at for parents
     crossover_prob = 0.9  # 90% crossover chance
-    mutation_prob = 0.2  # 20% mutation chance
+    mutation_prob = 0.15  # 15% mutation chance
     elite_count = 0.1  # 0.1 as in 10% of best carries on
-    max_generations = max(10, n * 50)  # max no. generations
+    max_generations = max(50, n * 15)  # max no. generations (e.g. 360 for 24 cities)
 
     # Step 1 - generate initial population
     population = generate_population(cities, pop_size, rng)
@@ -228,8 +229,7 @@ def genetic_algorithm(cities, pop_size=None, seed=None, verbose=False):
 
         # Step 4 - update best solution
         gen_best = max(population, key=lambda ind: ind.fitness)
-        # fitness_stats.append((generation, round(gen_best.distance, 3)))
-        fitness_stats.append((generation, gen_best.fitness))
+        fitness_stats.append((generation, round(gen_best.distance, 4)))
 
         if gen_best.fitness > overall_best.fitness:
             overall_best = gen_best
@@ -239,11 +239,8 @@ def genetic_algorithm(cities, pop_size=None, seed=None, verbose=False):
 
     return overall_best.path, overall_best.distance, fitness_stats
 
-
-
 def plot_average_fitness(curves, labels):
-    markers = ['o', 's', '^', 'D', 'x']
-    colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
 
     runs = len(curves[0])
 
@@ -264,31 +261,26 @@ def plot_average_fitness(curves, labels):
         x = list(run_averages.keys())
         y = list(run_averages.values())
 
-        # print(f"\nPlotting run {i}")
-        # print(run_averages)
-
         # add this sets data to plot
         plt.plot(
             x, y,
             label=f"Pop. {label}",
-            marker=markers[i % len(markers)],
             color=colors[i % len(colors)],
-            linewidth=1,
-            markersize=1
+            linewidth=1.5,
+            alpha=0.8
         )
 
     plt.xlabel("Generation")
     plt.ylabel("Average Distance")
-    plt.title("Average Fitness Over Generations")
     plt.legend()
-    plt.grid(True)
+    plt.grid(True, alpha=0.3)
     plt.show()
 
 
 def main():
     # main flags
     verbose = False
-    limit = 24
+    limit = 20
     seed = random.randint(0, 2 ** 16 - 1)
 
     # limits no. cities
@@ -309,7 +301,7 @@ def main():
     # statistics (worst, mean) + plot           (lambda prevents it from running first)
     # population growth: ( n*5, n*10, n*15 )
     cities = list(range(24))
-    sizes = [120, 240, 360]
+    sizes = [40, 120, 360]
     curves1 = run_statistics(lambda: genetic_algorithm(cities, pop_size=sizes[0]), f"Genetic 24/{sizes[0]}")
     curves2 = run_statistics(lambda: genetic_algorithm(cities, pop_size=sizes[1]), f"Genetic 24/{sizes[1]}")
     curves3 = run_statistics(lambda: genetic_algorithm(cities, pop_size=sizes[2]), f"Genetic 24/{sizes[2]}")
