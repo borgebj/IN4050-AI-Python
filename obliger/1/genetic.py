@@ -158,7 +158,7 @@ def genetic_algorithm(cities, pop_size=None, seed=None, verbose=False):
     crossover_prob = 0.9  # 90% crossover chance
     mutation_prob = 0.2  # 20% mutation chance
     elite_count = 0.1  # 0.1 as in 10% of best carries on
-    max_generations = max(10, n * 50)  # max no. generations
+    max_generations = max(10, n * 20)  # max no. generations
 
     # Step 1 - generate initial population
     population = generate_population(cities, pop_size, rng)
