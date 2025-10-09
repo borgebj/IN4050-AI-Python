@@ -125,7 +125,7 @@ def tournament_selection(population, rng, k=3):
     sample = rng.sample(population, k)
 
     # finds best, returns it
-    best = population[0]
+    best = sample[0]
     for ind in sample:
         if ind.fitness > best.fitness:
             best = ind
