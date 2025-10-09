@@ -1,4 +1,4 @@
-from utils import city_names, path_distance, format_time
+from utils import city_names, path_distance, format_time, parse_args
 from statistics import run_statistics
 import random
 import time
@@ -12,12 +12,7 @@ def generate_start(cities):
 
 
 def generate_neighbors(path):
-    """
-    Generates neighboring paths by swapping two cities in the current path.
-    
-    cities: list of city indices
-    """
-
+    """Generates neighboring paths by swapping two cities in the current path. """
     neighbors = []
     cities = len(path)
 
@@ -33,11 +28,7 @@ def generate_neighbors(path):
 
 
 def hill_climb(cities, verbose=False):
-    """
-    Finds the shortest path among the (one) given permutations of cities generated at start.
-
-    cities: list of city indices
-    """
+    """Finds the shortest path among the (one) given permutations of cities generated at start."""
 
     # chooses an arbitrary (random) start, as well as its distance
     start = generate_start(cities)
@@ -70,12 +61,13 @@ def hill_climb(cities, verbose=False):
 
 
 def main():
-    # main flags
-    verbose = False
-    LIMIT = 24  # 24 max
+    # load arguments from CLI
+    args = parse_args()
+    verbose = args.verbose
+    limit = args.limit
 
     # limits no. cities
-    cities = list(range(LIMIT))  # represents cities as indexes
+    cities = list(range(limit))  # represents cities as indexes
 
     # finds the shortest path in regard to neighboring paths
     start = time.time()
@@ -89,7 +81,7 @@ def main():
     print(f"Shortest path:\n    {path_str}\n")
     print(f"Distance:\n    {distance:.4f}\n")
     print(f"Total neighbors visited:\n    {step + 1}\n")
-    print(f"Time taken for {LIMIT} cities:\n    {format_time(end - start)}\n")
+    print(f"Time taken for {limit} cities:\n    {format_time(end - start)}\n")
 
     # statistics (worst, mean) + plot           (lambda prevents it from running first)
     run_statistics(lambda: hill_climb(list(range(10))), "Hill Climb 10")

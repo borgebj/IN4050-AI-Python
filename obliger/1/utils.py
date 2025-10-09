@@ -1,5 +1,5 @@
+from argparse import ArgumentParser
 import csv
-
 
 """Reads the CSV file and returns the cities and distance matrix."""
 with open("european_cities.csv", "r") as f:
@@ -32,6 +32,35 @@ def path_distance(path, verbose=False):
             print(f"\t{city:8}\t-> {distance} ->\t{next_city},")
 
     return total_distance
+
+
+def parse_args():
+    """Command line arguments."""
+    parser = ArgumentParser(description="CLI arguments for TSP algorithms")
+
+    parser.add_argument(
+        "-l", "--limit", "--cities",
+        type=int,
+        required=True,
+        help="Number of cities in path (max 24)",
+    )
+
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        default=False,
+        help="Verbose output (may be very long)"
+    )
+
+    parser.add_argument(
+        "-s", "--seed",
+        type=int,
+        default=None,
+        help="Random seed for reproducibility (used in GA)"
+    )
+
+    args = parser.parse_args()
+    return args
 
 
 # ====================== TIMING ======================= #

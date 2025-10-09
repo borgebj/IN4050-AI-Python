@@ -1,4 +1,4 @@
-from utils import city_names, path_distance, format_time
+from utils import city_names, path_distance, format_time, parse_args
 from statistics import run_statistics
 import matplotlib.pyplot as plt
 import random
@@ -16,8 +16,9 @@ class Individual:
         self.path = path
         self.distance = path_distance(path)
         self.fitness = 1 / self.distance
-        # this way, higher fitness is better (shorter distance)
+        # this way, higher fitness = shorter distance = better
 
+    @staticmethod
     def create_random(cities, rng):
         path = cities.copy()
         rng.shuffle(path)
@@ -160,7 +161,6 @@ def genetic_algorithm(cities, pop_size=None, seed=None, verbose=False):
     mutation_prob = 0.15  # 15% mutation chance
     elite_count = 0.1  # 0.1 as in 10% of best carries on
     max_generations = max(50, n * 15)  # max no. generations (e.g. 360 for 24 cities)
-    elite_count = 0.1  # 10% of best carries on
 
     # Step 1 - generate initial population
     population = generate_population(cities, pop_size, rng)
@@ -282,10 +282,11 @@ def plot_average_fitness(curves, labels):
 
 
 def main():
-    # main flags
-    verbose = False
-    limit = 20
-    seed = random.randint(0, 2 ** 16 - 1)
+    # load arguments from CLI
+    args = parse_args()
+    verbose = args.verbose
+    limit = args.limit
+    seed = args.seed if args.seed is not None else random.randint(0, 2 ** 16 - 1)
 
     # limits no. cities
     cities = list(range(limit))  # represents cities as indexes
@@ -310,6 +311,7 @@ def main():
     curves2 = run_statistics(lambda: genetic_algorithm(cities, pop_size=sizes[1]), f"Genetic 24/{sizes[1]}")
     curves3 = run_statistics(lambda: genetic_algorithm(cities, pop_size=sizes[2]), f"Genetic 24/{sizes[2]}")
 
+    # 3 curves w/ average fitness per gen.
     plot_average_fitness([curves1, curves2, curves3], sizes)
 
 

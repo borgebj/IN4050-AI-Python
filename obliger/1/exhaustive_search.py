@@ -1,4 +1,4 @@
-from utils import city_names, path_distance, format_time
+from utils import city_names, path_distance, format_time, parse_args
 from plotter import plot_plan
 from statistics import plot_extrapolation
 from itertools import permutations
@@ -34,9 +34,10 @@ def exhaustive_search(cities, verbose=False):
 
 
 def main():
-    # main flags
-    verbose = False
-    limit = 10  # 24 max
+    # load arguments from CLI
+    args = parse_args()
+    verbose = args.verbose
+    limit = args.limit
 
     # limits no. cities
     cities = list(range(limit))  # represents cities as indexes
