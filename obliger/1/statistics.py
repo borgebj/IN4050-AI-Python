@@ -1,5 +1,4 @@
 import time
-import numpy as np
 import math
 from plotter import plot_plan, plot_times
 from utils import city_names, format_time
@@ -29,15 +28,15 @@ def extrapolate_exhaustive(times, n):
 
         Returns extrapolated times and a function to predict any n
     """
-    x = np.array([t[0] for t in times])  # x vals (no. cities)
-    y = np.array([t[1] for t in times])  # y vals (time in s)
+    x = [t[0] for t in times]  # x vals (no. cities)
+    y = [t[1] for t in times]  # y vals (time in s)
 
     # k = time / n!
     # how much time per permutation
     k_values = [y / math.factorial(x) for x, y in zip(x, y)]
 
     # average all per-permutation times for extrapolation
-    k = np.mean(k_values)
+    k = sum(k_values) / len(k_values)
 
     print(f"\n === Extrapolation Model ===")
     print(f"Time(x) = {k} * x!")
