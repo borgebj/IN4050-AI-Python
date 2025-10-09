@@ -91,8 +91,9 @@ def main():
     print(f"Total neighbors visited:\n    {step + 1}\n")
     print(f"Time taken for {LIMIT} cities:\n    {format_time(end - start)}\n")
 
-    # statistics (worst, mean) + plot
-    run_statistics(hill_climb)
+    # statistics (worst, mean) + plot           (lambda prevents it from running first)
+    run_statistics(lambda: hill_climb(list(range(10))), "Hill Climb 10")
+    run_statistics(lambda: hill_climb(list(range(24))), "Hill Climb 24")
 
 
 if __name__ == "__main__":

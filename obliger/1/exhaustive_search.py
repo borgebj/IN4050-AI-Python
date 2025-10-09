@@ -1,5 +1,6 @@
 from utils import city_names, path_distance, format_time
-from plotter import plot_extrapolation, plot_plan
+from plotter import plot_plan
+from statistics import plot_extrapolation
 from itertools import permutations
 import time
 
@@ -19,7 +20,6 @@ def exhaustive_search(cities, verbose=False):
         num_perms += 1
 
         total_distance = path_distance(permutation, verbose)
-        # total_distance = sum(matrix[c_k][c_((k+1)mod n))], n-1, k=0
 
         # compare shortest
         if total_distance < shortest_distance:

@@ -71,48 +71,51 @@ def plot_extrapolation(limit, max_extrapolate, function, extrapolate=True):
         plot_times(times_measured, times_extrapolated, function)
 
 
-def run_statistics(function):
+def run_statistics(function, name):
     """
     Does 20 runs, prints worst and mean distances, plots the middle run
+    Assumes function is passed with arguments, makes it easier to call
+    args:  (cities, pop_size)
     """
     runs = 20
+    print(f"\n=== Statistics for {name} ===")
 
-    print("\n=== Statistics ===")
+    best_distance = float('inf')
+    best_path = None
+    distances = []
+    curves = []         # for GA
 
-    # runs hill with 10 and 24 cities
-    for limit in [10, 24]:
-        cities = list(range(limit))
+    # run 20 times
+    for run in range(runs):
+        path, distance, third = function()
 
-        best_distance = float('inf')
-        best_path = None
-        distances = []
+        # GA, get curves
+        curves.append(third)
 
-        # run 20 times
-        for run in range(runs):
-            path, distance, _ = function(cities)
-            distances.append(distance)
+        distances.append(distance)
 
-            # get best
-            if distance < best_distance:
-                best_distance = distance
-                best_path = path
+        # get best
+        if distance < best_distance:
+            best_distance = distance
+            best_path = path
 
-        # plot best  - will plot twice, for 20 and 24
-        path_names = [city_names[i] for i in best_path]
-        plot_plan(path_names)
+    # plot best
+    path_names = [city_names[i] for i in best_path]
+    plot_plan(path_names)
 
-        # calculate statistics
-        worst = max(distances)
-        mean = sum(distances) / runs
+    # calculate statistics
+    worst = max(distances)
+    mean = sum(distances) / runs
 
-        # square each deviation
-        deviations = [((distance - mean) ** 2) for distance in distances]
-        variance = sum(deviations) / (len(distances) - 1)
-        standard_deviation = variance ** 0.5
+    # square each deviation
+    deviations = [((distance - mean) ** 2) for distance in distances]
+    variance = sum(deviations) / (len(distances) - 1)
+    standard_deviation = variance ** 0.5
 
-        # display statistics
-        print(f"\n== {limit} cities ==")
-        print(f"Worst distance over {runs} runs: {worst:15.4f}")
-        print(f"Mean  distance over {runs} runs: {mean:15.4f}")
-        print(f"Best  distance over {runs} runs: {best_distance:15.4f}")
-        print(f"Standard deviation over {runs} runs: {standard_deviation:11.4f}")
+    # display statistics
+    print(f"Worst distance over {runs} runs: {worst:15.4f}")
+    print(f"Mean  distance over {runs} runs: {mean:15.4f}")
+    print(f"Best  distance over {runs} runs: {best_distance:15.4f}")
+    print(f"Standard deviation over {runs} runs: {standard_deviation:11.4f}")
+
+    return curves
