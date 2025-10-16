@@ -73,13 +73,15 @@ Output layer:
 
 np.set_printoptions(precision=2, suppress=True)
 
+# truth-labels
 y_true = np.array([
     [0, 1],  # sample 1 - no rain, windy
     [1, 1],  # sample 2 - rain, windy
-    [0, 0]  # sample 3 - no rain, no windy
+    [0, 0]   # sample 3 - no rain, no windy
 ])
 
 # ========== Input layer ==========
+print(f"\n========== Input layer 0 ==========")
 # 1 sample, 2 features
 # feature 1 = 0.5
 # feature 2 = 0.9
@@ -98,6 +100,7 @@ normalize(X)
 print(f"\nPost norm:\n{X}")
 
 # ========== Hidden layer ==========
+print(f"\n========== Hidden layer 1 ==========")
 # 2 neurons in the hidden layer
 W1 = np.array([[0.2, 0.8],
                [0.5, 0.1]])
@@ -118,6 +121,7 @@ print("\nZ1\n", Z1)
 print("\nA1\n", A1)
 
 # ========== Output layer ==========
+print(f"\n========== Output layer 2 ==========")
 # 2 neurons in the output layer
 W2 = np.array([[0.3, 0.4],
                [0.6, 0.9]])
