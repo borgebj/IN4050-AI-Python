@@ -13,3 +13,5 @@ java-out
 bin
 jena
 *.xml
+zip
+*.zip
