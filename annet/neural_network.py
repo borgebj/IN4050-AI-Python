@@ -24,11 +24,9 @@ def sigmoid_derivative(x):
 
 
 # ========== Data Normalization ==================
-def normalize(x):
+def normalize(x, min, max):
     """Min-Max Normalization (0-1) with numpy array x"""
-    x_min = x.min(axis=0)  # column-wise min
-    x_max = x.max(axis=0)  # column-wise max
-    return (x - x_min) / (x_max - x_min)  # modifies in place
+    return (x - min) / (max - min)
 
 
 # ========== Loss function ==================
@@ -41,6 +39,22 @@ def binary_cross_entropy(y_true, y_pred):
 def derivative_bce(y_true, y_pred):
     """Calculates derivative of binary cross entropy loss"""
     return (y_pred - y_true) / (y_pred * (1 - y_pred))
+
+
+def print_prediction(nn, test, true):
+    print("\n========== Testing Predictions ==========")
+    norm = normalize(test, train_min, train_max)    # norm
+    prediction = nn.predict(norm)                   # predict
+
+    for i in range(test.shape[0]):
+        features = test[i]
+        label = true[i, 0]
+
+        pred_prob = prediction[i, 0]
+        pred_class = "Spam" if pred_prob >= 0.5 else "Not Spam"
+
+        # Combine features and label in one line
+        print(f"{features} = [{label}]  -->  Pred: {pred_prob*100:.2f}% ({pred_class})")
 
 
 """
@@ -124,14 +138,14 @@ class SimpleNN:
         self.W1 -= self.lr * dW1         # weight update
         self.b1 -= self.lr * dB1         # bias update
 
-    def train(self, X, y_true, epochs=100):
+    def train(self, X, Y, epochs=100):
         for epoch in range(epochs):
             Z1, A1, A2 = self.forward(X)
-            self.backward(X, y_true, Z1, A1, A2)
+            self.backward(X, Y, Z1, A1, A2)
 
             # training loop
             if (epoch + 1) % 50 == 0 or epoch == 0:
-                loss = binary_cross_entropy(y_true, A2)
+                loss = binary_cross_entropy(Y, A2)
                 print(f"Epoch {epoch + 1:3}, Loss: {loss:.4f}")
 
     def predict(self, X):
@@ -151,7 +165,9 @@ X_orig = np.array([
 ])
 
 # Normalize
-X = normalize(X_orig)
+train_min = X_orig.min(axis=0)  # column-wise min  (min for training data)
+train_max = X_orig.max(axis=0)  # column-wise max  (max for training data)
+X = normalize(X_orig, train_min, train_max)
 
 # Labels: spam = 1, not spam = 0
 y_true = np.array([
@@ -164,17 +180,43 @@ y_true = np.array([
 
 nn = SimpleNN(input_size=3, hidden_size=2, output_size=1, lr=0.1)
 nn.train(X, y_true, epochs=500)
+np.savez("spam_model.npz", W1=nn.W1, b1=nn.b1, W2=nn.W2, b2=nn.b2,  # save model
+         train_min=train_min, train_max=train_max)
 
-# prediction / testing
-print("\n========== Testing Predictions ==========")
+# New test samples (unseen during training)
+X_test = np.array([
+    [1, 1, 1],  # all keywords present -> likely spam
+    [0, 1, 1],  # "win" and "offer" -> probably spam
+    [1, 0, 1],  # "free" and "offer" -> likely spam
+    [0, 0, 0],  # no keywords -> not spam
+    [0, 1, 0],  # "win" only -> spam? borderline
+    [1, 0, 0],  # "free" only -> borderline
+    [0, 0, 1],  # "offer" only -> borderline
+])
+y_true_test = np.array([
+    [1],  # spam
+    [1],  # spam
+    [1],  # spam
+    [0],  # not spam
+    [1],  # spam
+    [0],  # not spam
+    [0],  # not spam
+])
 
-predictions = nn.predict(X)
+# (normalization done inside)
+print("\nSeen data")
+print_prediction(nn, X_orig, y_true)        # training data predictions
+print("\nUnseen data")
+print_prediction(nn, X_test, y_true_test)   # test data predictions
 
-for i in range(X_orig.shape[0]):
-    features = X_orig[i]
-    label = y_true[i, 0]
-    pred_prob = predictions[i, 0]
-    pred_class = "Spam" if pred_prob >= 0.5 else "Not Spam"
+"""
+Usage for loading the model  (name "spam_model.npz")
 
-    # Combine features and label in one line
-    print(f"{features} = [{label}]  --> Pred: {pred_prob:.4f} ({pred_class})")
+data = np.load("spam_model.npz")
+nn.W1 = data["W1"]
+nn.b1 = data["b1"]
+nn.W2 = data["W2"]
+nn.b2 = data["b2"]
+train_min = data["train_min"]
+train_max = data["train_max"]
+"""
