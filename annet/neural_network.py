@@ -79,7 +79,9 @@ Layer summary:
 
 """
 
+
 class SimpleNN:
+
     def __init__(self, input_size, hidden_size, output_size, lr=0.1):
         self.lr = lr
         # input layer to hidden layer
