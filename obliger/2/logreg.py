@@ -1,5 +1,4 @@
 import numpy as np
-from data import X_train, t2_train, X_val, t2_val
 from plotter import plot_decision_regions
 
 
@@ -61,7 +60,7 @@ class NumpyLogRegClass(NumpyClassifier):
         self.losses = []        # stores losses
         self.accuracies = []    # store accuracies
 
-    def fit(self, X_train, t_train, lr=0.1, epochs=10, validation=None):
+    def fit(self, X_train, t_train, validation=None, lr=0.1, epochs=10):
         """
         X_train is a NxM matrix, N data points, M features
             - training data
@@ -84,12 +83,13 @@ class NumpyLogRegClass(NumpyClassifier):
         if self.bias:
             X_train = add_bias(X_train, self.bias)
 
-        if validation:
-            X_val, t_val = validation
+        if validation and self.bias:
+            (X_val, t_val) = validation
+            X_val = add_bias(X_val, self.bias)
 
         (N, M) = X_train.shape
 
-        self.weights = weights = np.zeros(M)
+        self.weights = weights = np.zeros(M)     # weights are all 0 = [0.0, 0.0, ..., 0.0]
 
         for epoch in range(epochs):
 
@@ -102,18 +102,23 @@ class NumpyLogRegClass(NumpyClassifier):
             # weight update using gradient
             weights -= lr * gradient
 
+            # loss calculation + store it (validation data)
+            if validation:
+                Z_val = X_val @ weights
+                pred_val = sigmoid(Z_val)
 
-            # loss calculation + store it
-            predictions = activation > 0.5
-            loss = bce(y_true=t_train, y_pred=activation)
-            acc = accuracy(predictions, t_train)
+                loss = bce(y_true=t_val, y_pred=pred_val)
+                acc = accuracy(predicted=(pred_val > 0.5), gold=t_val)
 
-            self.losses.append(loss)
-            self.accuracies.append(acc)
+                self.losses.append(loss)
+                self.accuracies.append(acc)
 
             # print occasionally
             if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
-                print(f"Epoch {epoch+1:3} - Loss: {loss:.4f}")
+                if validation:
+                    print(f"Epoch {epoch+1:3} - Loss: {loss:.4f}")
+                else:
+                    print(f"Epoch {epoch+1:3}")
 
     def predict(self, X, threshold=0.5):
         """X is a KxM matrix for some K>=1
@@ -147,14 +152,18 @@ class NumpyLogRegClass(NumpyClassifier):
 
 
 def main():
-    global X_train
+    from data import X_train, t2_train, X_val, t2_val
 
     # task 1 part 2 - scaling data using standard scaler
     norm_train = standard(X_train)
     X_train = norm_train
 
     cl = NumpyLogRegClass()
-    cl.fit(X_train, t2_train, lr=0.1, epochs=3)   # training   (seen data)
+    cl.fit(
+        X_train=X_train,
+        t_train=t2_train,
+        lr=0.1, epochs=3,
+        validation=(X_val, t2_val))               # training   (seen data)
     predictions = cl.predict(X_val)               # predicting (unseen data)
 
     print("Accuracy on the validation set:", accuracy(predictions, t2_val))

@@ -1,5 +1,4 @@
 import numpy as np
-from data import X_train, t2_train, X_val, t2_val
 from plotter import plot_decision_regions
 
 
@@ -89,7 +88,7 @@ class NumpyLinRegClass(NumpyClassifier):
             weights -= lr * gradient
 
 
-            # loss calculation
+            # loss calculation (on seen data)
             loss = mse(y_true=t_train, y_pred=prediction)
 
             # print occationally
@@ -110,7 +109,7 @@ class NumpyLinRegClass(NumpyClassifier):
 
 
 def main():
-    global X_train
+    from data import X_train, t2_train, X_val, t2_val
 
     # task 1 part 2 - scaling data using standard scaler
     norm_train = standard(X_train)
