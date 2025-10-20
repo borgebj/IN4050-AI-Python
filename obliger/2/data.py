@@ -21,7 +21,6 @@ indices = np.arange(X.shape[0])
 seed = 2024
 rng = np.random.RandomState(seed)           # seed for reproducibility
 rng.shuffle(indices)                        # shuffles data before splitting
-print(indices[:10])
 
 # Splitting into train, dev and test
 X_train = X[indices[:1000], :]              # 50% train
@@ -40,12 +39,14 @@ t2_test = (t_multi_test >= 3).astype('int')
 
 
 # ========== Plotting ==========
-plt.figure(figsize=(8,6)) # You may adjust the size
-plt.scatter(X_train[:, 0], X_train[:, 1], c=t_multi_train, s=10.0)
-plt.title("Multi-class set")
-plt.show()
+def plot_multiclass():
+    plt.figure(figsize=(8,6)) # You may adjust the size
+    plt.scatter(X_train[:, 0], X_train[:, 1], c=t_multi_train, s=10.0)
+    plt.title("Multi-class set")
+    plt.show()
 
-plt.figure(figsize=(8,6))
-plt.scatter(X_train[:, 0], X_train[:, 1], c=t2_train, s=10.0)
-plt.title("Binary set")
-plt.show()
+def plot_binary():
+    plt.figure(figsize=(8,6))
+    plt.scatter(X_train[:, 0], X_train[:, 1], c=t2_train, s=10.0)
+    plt.title("Binary set")
+    plt.show()
