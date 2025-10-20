@@ -61,8 +61,8 @@ class NumpyLinRegClass(NumpyClassifier):
 
             # parts of weight update
             prediction = X_train @ weights      # Y = X * W
-            error = (prediction - t_train)      # L = (Y - T)
-            gradient = (X_train.T @ error) / N  # gradient avg. over all samples
+            error = (prediction - t_train)      # L = (Y - T)                     (MSE derivative)
+            gradient = (X_train.T @ error) / N  # gradient avg. over all samples  (Y.der. * MSE.der.)
 
             # weight update using gradient
             weights -= lr * gradient
