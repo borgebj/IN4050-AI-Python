@@ -1,5 +1,5 @@
+from plotter import plot_curves
 import numpy as np
-from plotter import plot_decision_regions
 
 
 # ============== NEW FUNCTIONS ===================
@@ -97,7 +97,7 @@ class NumpyLogRegClass(NumpyClassifier):
         self.weights = weights = np.zeros(M)     # weights are all 0 = [0.0, 0.0, ..., 0.0]
 
         # keep track of lowest loss and epoch with improvements
-        lowest_val_loss = np.inf
+        lowest_dev_loss = np.inf
         epoch_no_improvement = 0
 
         for epoch in range(epochs):
@@ -123,17 +123,17 @@ class NumpyLogRegClass(NumpyClassifier):
             # loss and accuracy for validation data
             if validation:
                 Z_val = X_val @ weights
-                pred_val = sigmoid(Z_val)
+                pred_dev = sigmoid(Z_val)
 
-                dev_loss = bce(y_true=t_val, y_pred=pred_val)
-                dev_acc = accuracy(predicted=(pred_val>0.5), gold=t_val)
-                self.loss_dev.append(dev_loss)
-                self.accuracies_dev.append(dev_acc)
+                dev_loss = bce(y_true=t_val, y_pred=pred_dev)
+                dev_acc = accuracy(predicted=(pred_dev>0.5), gold=t_val)
+                self.loss_dev.append(float(dev_loss))
+                self.accuracies_dev.append(float(dev_acc))
 
                 # measuring loss based on tolerance
                 if tol is not None:
-                    if (lowest_val_loss - dev_loss) > tol:
-                        lowest_val_loss = dev_loss
+                    if (lowest_dev_loss - dev_loss) > tol:
+                        lowest_dev_loss = dev_loss
                         epoch_no_improvement = 0
                     else:
                         epoch_no_improvement += 1
@@ -157,7 +157,6 @@ class NumpyLogRegClass(NumpyClassifier):
     def predict(self, X, threshold=0.5):
         """X is a KxM matrix for some K>=1
         predict the value for each point in X
-        # gives = [0, 1, 0, ...]
         """
 
         if self.bias:
@@ -169,15 +168,15 @@ class NumpyLogRegClass(NumpyClassifier):
         # compute logistic function (sigmoid)
         ys = sigmoid(ys)
 
+        # modified to allow probabilities AND classes
         if threshold is not None:
-            return ys > threshold
+            return ys > threshold       # classes [0, 1, 0, ..]
         else:
-            return ys
+            return ys                   # probabilities [0.2, 0.7, ...]
 
 
     def predict_probability(self, X):
-        """Predicts probabilities, not classes
-        (predict without threshold)"""
+        """Predicts probabilities, not classes"""
         return self.predict(X, threshold=None)
 
 
@@ -193,11 +192,11 @@ def main():
 
     # Normalizing test data
     norm_train = standard(X_train, train_mean, train_std)
-    # X_train = norm_train
+    X_train = norm_train
 
     # Normalizing validation data
     norm_val = standard(X_val, train_mean, train_std)
-    # X_val = norm_val
+    X_val = norm_val
     # ---------------- ---------------- ---------------- 
 
 
@@ -209,7 +208,7 @@ def main():
     learning_rate = 1.0
     epochs = 1000
     tolerance = 1.0
-    patience = 5
+    patience = 10
 
     print(f"__Hyperparameters__\n"  + 
           f"- Learning:   [{learning_rate}]\n" +
@@ -226,20 +225,24 @@ def main():
     predictions = cl.predict(X_val)                 # predicting (unseen data)
 
     print("\nAccuracy on the validation set:", accuracy(predictions, t2_val))
+    # ---------------- ---------------- ---------------- 
 
-    # probabilities = cl.predict_probability(X_val)
-    # print("\n\nPredictions")
-    # print(predictions[:5])
-    # print("\nProbabilities")
-    # print(probabilities[:5])
 
-    # print("\nTraining loss")
-    # print(cl.loss_train[:5])
-    # print("\nTraining accuracy")
-    # print(cl.accuracies_train[:5])
 
-    # plot_decision_regions(X_train, t2_train, cl)
 
+    # ---------------- 3. Plotting ---------------- ----
+
+    # accuracy curve
+    acc_train = cl.accuracies_train
+    acc_dev = cl.accuracies_dev
+    plot_curves(res_train=acc_train, res_dev=acc_dev, label = "Accuracy")
+
+    # loss curve
+    loss_train = cl.loss_train
+    loss_dev = cl.loss_dev
+    plot_curves(res_train=loss_train, res_dev=loss_dev, label = "Loss")
+
+    # ---------------- ---------------- ---------------- 
     print("\n"*5)
 
 
