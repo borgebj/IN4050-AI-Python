@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.datasets import make_blobs
 
+
 # Generating the dataset
 X, t_multi = make_blobs(
     n_samples=[400, 400, 400, 400, 400],    # 5 classes, 400 each

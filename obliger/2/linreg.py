@@ -111,12 +111,19 @@ class NumpyLinRegClass(NumpyClassifier):
 def main():
     from data import X_train, t2_train, X_val, t2_val
 
+    # ----------------- 1. normalization ---------------- 
     # task 1 part 2 - scaling data using standard scaler
     norm_train = standard(X_train)
     X_train = norm_train
+    # ---------------- ---------------- ---------------- 
 
+
+    # ---------------- 2. Regression ---------------- --
     cl = NumpyLinRegClass()
-    cl.fit(X_train, t2_train, lr=1, epochs=2)   # training   (seen data)
+    cl.fit(
+        X_train=X_train, 
+        t_train=t2_train, 
+        lr=1, epochs=2)                         # training   (seen data)
     predictions = cl.predict(X_val)             # predicting (unseen data)
 
     print("Accuracy on the validation set:", accuracy(predictions, t2_val))

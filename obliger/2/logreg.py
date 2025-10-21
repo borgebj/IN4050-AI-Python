@@ -3,11 +3,9 @@ from plotter import plot_decision_regions
 
 
 # ============== NEW FUNCTIONS ===================
-def standard(X):
-    """Standard scaler aka Z-score"""
-    # do axis=0 > column, due to per-feature
-    mean = X.mean(axis=0)
-    std = X.std(axis=0)
+def standard(X, mean, std):
+    """Standard scaler aka Z-score
+    Usses passed mean and std (must use same as training!)"""
     return (X - mean) / std
 
 
@@ -83,6 +81,7 @@ class NumpyLogRegClass(NumpyClassifier):
         if self.bias:
             X_train = add_bias(X_train, self.bias)
 
+        # if validation provided, add bias before running
         if validation and self.bias:
             (X_val, t_val) = validation
             X_val = add_bias(X_val, self.bias)
@@ -97,7 +96,7 @@ class NumpyLogRegClass(NumpyClassifier):
             Z = X_train @ weights                # Z = X * W
             activation = sigmoid(Z)              # A = sigmoid(Z)                  (NEW - logreg)
             error = (activation - t_train)       # L = (Y - T)                     (BCE derivative w/ sigmoid)
-            gradient = (X_train.T @ error) / N  # gradient avg. over all samples  (Y.der. * MSE.der.)
+            gradient = (X_train.T @ error) / N  # gradient avg. over all samples   (Y.der. * BCE+sigmoid.der.)
 
             # weight update using gradient
             weights -= lr * gradient
@@ -120,6 +119,7 @@ class NumpyLogRegClass(NumpyClassifier):
                 else:
                     print(f"Epoch {epoch+1:3}")
 
+
     def predict(self, X, threshold=0.5):
         """X is a KxM matrix for some K>=1
         predict the value for each point in X
@@ -136,6 +136,7 @@ class NumpyLogRegClass(NumpyClassifier):
         ys = sigmoid(ys)
 
         return ys > threshold
+
 
     def predict_probability(self, X):
         """Predicts probabilities, not classes
@@ -154,9 +155,22 @@ class NumpyLogRegClass(NumpyClassifier):
 def main():
     from data import X_train, t2_train, X_val, t2_val
 
-    # task 1 part 2 - scaling data using standard scaler
-    norm_train = standard(X_train)
+    # ----------------- 1. normalization ---------------- 
+    # do axis=0 > column, due to per-feature
+    train_mean = X_train.mean(axis=0)
+    train_std = X_train.std(axis=0)
+
+    # Normalizing test data
+    norm_train = standard(X_train, train_mean, train_std)
     X_train = norm_train
+
+    # Normalizing validation data
+    norm_val = standard(X_val, train_mean, train_std)
+    X_val = norm_val
+    # ---------------- ---------------- ---------------- 
+
+
+    # ---------------- 2. Regression ---------------- --
 
     cl = NumpyLogRegClass()
     cl.fit(
@@ -175,9 +189,9 @@ def main():
     print("\nProbabilities")
     print(probabilities[:5])
 
-    print()
-    print(cl.accuracies)
-    print(cl.losses)
+    #print()
+    #print(cl.accuracies)
+    #print(cl.losses)
 
     # plot_decision_regions(X_train, t2_train, cl)
 
