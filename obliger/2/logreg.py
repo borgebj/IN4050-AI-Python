@@ -1,4 +1,4 @@
-from plotter import plot_curves
+from plotter import plot_curves, plot_decision_regions
 import numpy as np
 
 
@@ -228,8 +228,6 @@ def main():
     # ---------------- ---------------- ---------------- 
 
 
-
-
     # ---------------- 3. Plotting ---------------- ----
 
     # accuracy curve
@@ -241,6 +239,8 @@ def main():
     loss_train = cl.loss_train
     loss_dev = cl.loss_dev
     plot_curves(res_train=loss_train, res_dev=loss_dev, label = "Loss")
+
+    plot_decision_regions(X_train, t2_train, cl)
 
     # ---------------- ---------------- ---------------- 
     print("\n"*5)

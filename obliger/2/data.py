@@ -35,7 +35,7 @@ t_multi_test = t_multi[indices[1500:]]      # labels for test
 
 # converting 5-class labels to binary labels
 t2_train = (t_multi_train >= 3).astype('int')
-t2_val = (t_multi_val >= 3).astype('int')       # classes 3,4  ->  1 ; classes 0,1,2  ->  0
+t2_val = (t_multi_val >= 3).astype('int')   # classes 3,4  ->  1 ; classes 0,1,2  ->  0
 t2_test = (t_multi_test >= 3).astype('int')
 
 

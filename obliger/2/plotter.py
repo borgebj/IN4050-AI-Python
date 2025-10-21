@@ -43,4 +43,6 @@ def plot_curves(res_train, res_dev, label, size=(8, 6)):
     plt.plot(epochs, res_dev, label = "validation")
     plt.title(f"{label} over epochs")
     plt.legend()
+    plt.xlabel("Epochs")
+    plt.ylabel(label)
     plt.show()
