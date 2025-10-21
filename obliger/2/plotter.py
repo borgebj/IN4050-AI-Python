@@ -2,6 +2,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
+
+# Plotter from precode
 def plot_decision_regions(X, t, clf=[], size=(8, 6)):
     """Plot the data set (X,t) together with the decision boundary of the classifier clf"""
     # The region of the plane to consider determined by X
@@ -28,3 +30,7 @@ def plot_decision_regions(X, t, clf=[], size=(8, 6)):
     plt.xlabel("x0")
     plt.ylabel("x1")
     plt.show()
+
+
+# plotter for Loistic regression g)
+#TODO

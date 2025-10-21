@@ -55,10 +55,16 @@ class NumpyLogRegClass(NumpyClassifier):
 
     def __init__(self, bias=-1):
         self.bias = bias
-        self.losses = []        # stores losses
-        self.accuracies = []    # store accuracies
+        self.loss_train = []        # loss for training data   
+        self.accuracies_train = []  # accuarcies for training data
 
-    def fit(self, X_train, t_train, validation=None, lr=0.1, epochs=10):
+        self.loss_dev = []          # loss for validation data
+        self.accuracies_dev = []    # accuracies for validation data
+
+        self._epochs_trained = 0    # keep track of training duration
+
+
+    def fit(self, X_train, t_train, tol=0, n_epochs_no_update=5, validation=None, lr=0.1, epochs=10):
         """
         X_train is a NxM matrix, N data points, M features
             - training data
@@ -90,6 +96,10 @@ class NumpyLogRegClass(NumpyClassifier):
 
         self.weights = weights = np.zeros(M)     # weights are all 0 = [0.0, 0.0, ..., 0.0]
 
+        # keep track of lowest loss and epoch with improvements
+        lowest_val_loss = np.inf
+        epoch_no_improvement = 0
+
         for epoch in range(epochs):
 
             # parts of weight update
@@ -101,23 +111,47 @@ class NumpyLogRegClass(NumpyClassifier):
             # weight update using gradient
             weights -= lr * gradient
 
-            # loss calculation + store it (validation data)
+
+            # NEW
+            # loss and accuracy for training data       (used for manual testing)
+            train_loss = bce(y_true=t_train, y_pred=activation)
+            train_acc = accuracy(predicted=(activation>0.5), gold=t_train)
+            self.loss_train.append(float(train_loss))
+            self.accuracies_train.append(float(train_acc))
+
+
+            # loss and accuracy for validation data
             if validation:
                 Z_val = X_val @ weights
                 pred_val = sigmoid(Z_val)
 
-                loss = bce(y_true=t_val, y_pred=pred_val)
-                acc = accuracy(predicted=(pred_val > 0.5), gold=t_val)
+                dev_loss = bce(y_true=t_val, y_pred=pred_val)
+                dev_acc = accuracy(predicted=(pred_val>0.5), gold=t_val)
+                self.loss_dev.append(dev_loss)
+                self.accuracies_dev.append(dev_acc)
 
-                self.losses.append(loss)
-                self.accuracies.append(acc)
+                # measuring loss based on tolerance
+                if tol is not None:
+                    if (lowest_val_loss - dev_loss) > tol:
+                        lowest_val_loss = dev_loss
+                        epoch_no_improvement = 0
+                    else:
+                        epoch_no_improvement += 1
+
+                # stopping early (tol and n_epochs)
+                if epoch_no_improvement >= n_epochs_no_update:
+                    print(f"== Early stopping ==\nEpoch {epoch+1:3} - Loss: {dev_loss:.4f}, Accuracy: {(dev_acc*100):.2f}%\t(dev)")
+                    self._epochs_trained = epoch + 1
+                    break
+
+
 
             # print occasionally
             if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
                 if validation:
-                    print(f"Epoch {epoch+1:3} - Loss: {loss:.4f}")
+                    print(f"Epoch {epoch+1:3} - Loss: {dev_loss:.4f}, Accuarcy: {(dev_loss*100):.2f}%\t(dev)")
                 else:
-                    print(f"Epoch {epoch+1:3}")
+                    print(f"Epoch {epoch+1:3} - Loss: {train_loss:.4f}, Accuracy: {(train_acc*100):.2f}%\t(train))")
 
 
     def predict(self, X, threshold=0.5):
@@ -132,68 +166,81 @@ class NumpyLogRegClass(NumpyClassifier):
         # computes predictions
         ys = X @ self.weights
 
-        # compute activation
+        # compute logistic function (sigmoid)
         ys = sigmoid(ys)
 
-        return ys > threshold
+        if threshold is not None:
+            return ys > threshold
+        else:
+            return ys
 
 
     def predict_probability(self, X):
         """Predicts probabilities, not classes
         (predict without threshold)"""
-
-        if self.bias:
-            X = add_bias(X, self.bias)
-
-        # compute predictions
-        ys = X @ self.weights
-
-        # compute + return activation
-        return sigmoid(ys)
+        return self.predict(X, threshold=None)
 
 
 def main():
     from data import X_train, t2_train, X_val, t2_val
+    print("\n"*5)
 
     # ----------------- 1. normalization ---------------- 
     # do axis=0 > column, due to per-feature
+    # we extract mean and std from TRAINING, ensuring others use same scale as trained on
     train_mean = X_train.mean(axis=0)
     train_std = X_train.std(axis=0)
 
     # Normalizing test data
     norm_train = standard(X_train, train_mean, train_std)
-    X_train = norm_train
+    # X_train = norm_train
 
     # Normalizing validation data
     norm_val = standard(X_val, train_mean, train_std)
-    X_val = norm_val
+    # X_val = norm_val
     # ---------------- ---------------- ---------------- 
 
 
     # ---------------- 2. Regression ---------------- --
 
     cl = NumpyLogRegClass()
+    
+    # hyperparameters
+    learning_rate = 1.0
+    epochs = 1000
+    tolerance = 1.0
+    patience = 5
+
+    print(f"__Hyperparameters__\n"  + 
+          f"- Learning:   [{learning_rate}]\n" +
+          f"- Epochs:     [{epochs}]\n" +
+          f"- Tolerance:  [{tolerance}]\n"+
+          f"- Patience:   [{patience}]\n\n"
+    )
     cl.fit(
         X_train=X_train,
         t_train=t2_train,
-        lr=0.1, epochs=3,
-        validation=(X_val, t2_val))               # training   (seen data)
-    predictions = cl.predict(X_val)               # predicting (unseen data)
+        tol=tolerance, n_epochs_no_update=patience, # hyperparameters (1)
+        lr=learning_rate, epochs=epochs,            # hyperparameters (2)
+        validation=(X_val, t2_val))                 # training   (seen data)
+    predictions = cl.predict(X_val)                 # predicting (unseen data)
 
-    print("Accuracy on the validation set:", accuracy(predictions, t2_val))
+    print("\nAccuracy on the validation set:", accuracy(predictions, t2_val))
 
-    probabilities = cl.predict_probability(X_val)
+    # probabilities = cl.predict_probability(X_val)
+    # print("\n\nPredictions")
+    # print(predictions[:5])
+    # print("\nProbabilities")
+    # print(probabilities[:5])
 
-    print("\nPredictions")
-    print(predictions[:5])
-    print("\nProbabilities")
-    print(probabilities[:5])
-
-    #print()
-    #print(cl.accuracies)
-    #print(cl.losses)
+    # print("\nTraining loss")
+    # print(cl.loss_train[:5])
+    # print("\nTraining accuracy")
+    # print(cl.accuracies_train[:5])
 
     # plot_decision_regions(X_train, t2_train, cl)
+
+    print("\n"*5)
 
 
 if __name__ == "__main__":

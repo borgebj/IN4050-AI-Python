@@ -3,11 +3,9 @@ from plotter import plot_decision_regions
 
 
 # ============== NEW FUNCTIONS ===================
-def standard(X):
-    """Standard scaler aka Z-score"""
-    # do axis=0 > column, due to per-feature
-    mean = X.mean(axis=0)
-    std = X.std(axis=0)
+def standard(X, mean, std):
+    """Standard scaler aka Z-score
+    Usses passed mean and std (must use same as training!)"""
     return (X - mean) / std
 
 
@@ -88,12 +86,14 @@ class NumpyLinRegClass(NumpyClassifier):
             weights -= lr * gradient
 
 
-            # loss calculation (on seen data)
+            # loss and accuracy for training data       (used for manual testing)
             loss = mse(y_true=t_train, y_pred=prediction)
+            acc = accuracy(predicted=(prediction > 0.5), gold=t_train)
 
             # print occationally
             if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
-                print(f"Epoch {epoch+1:3} - Loss: {loss:.4f}")
+                print(f"Epoch {epoch+1:3} - Loss: {loss:.4f}, Accuracy: {(acc*100):.2f}%\t(train)")
+
 
     def predict(self, X, threshold=0.5):
         """X is a KxM matrix for some K>=1
@@ -110,10 +110,14 @@ class NumpyLinRegClass(NumpyClassifier):
 
 def main():
     from data import X_train, t2_train, X_val, t2_val
+    print("\n"*5)
 
     # ----------------- 1. normalization ---------------- 
+    train_mean = X_train.mean(axis=0)
+    train_std = X_train.std(axis=0)
+    
     # task 1 part 2 - scaling data using standard scaler
-    norm_train = standard(X_train)
+    norm_train = standard(X_train, train_mean, train_std)
     X_train = norm_train
     # ---------------- ---------------- ---------------- 
 
@@ -123,12 +127,14 @@ def main():
     cl.fit(
         X_train=X_train, 
         t_train=t2_train, 
-        lr=1, epochs=2)                         # training   (seen data)
+        lr=1, epochs=3)                         # training   (seen data)
     predictions = cl.predict(X_val)             # predicting (unseen data)
 
-    print("Accuracy on the validation set:", accuracy(predictions, t2_val))
+    print("\nAccuracy on the validation set:", accuracy(predictions, t2_val))
 
     # plot_decision_regions(X_train, t2_train, cl)
+
+    print("\n"*5)
 
 
 if __name__ == "__main__":
