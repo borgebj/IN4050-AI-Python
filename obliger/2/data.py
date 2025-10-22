@@ -28,7 +28,7 @@ X_train = X[indices[:1000], :]              # 50% train
 X_val = X[indices[1000:1500], :]            # 25% dev/validation
 X_test = X[indices[1500:], :]               # 25% test
 
-# labels for data
+# labels for data (multi-class)
 t_multi_train = t_multi[indices[:1000]]     # labels for train
 t_multi_val = t_multi[indices[1000:1500]]   # labels for dev/validation
 t_multi_test = t_multi[indices[1500:]]      # labels for test
@@ -45,6 +45,7 @@ def plot_multiclass():
     plt.scatter(X_train[:, 0], X_train[:, 1], c=t_multi_train, s=10.0)
     plt.title("Multi-class set")
     plt.show()
+
 
 def plot_binary():
     plt.figure(figsize=(8,6))

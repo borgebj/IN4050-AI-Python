@@ -1,4 +1,5 @@
 from plotter import plot_curves, plot_decision_regions
+from utility import NumpyClassifier, add_bias, accuracy
 import numpy as np
 
 
@@ -19,35 +20,11 @@ def bce(y_true, y_pred):
     return -np.mean(y_true * np.log(y_pred + eps) + (1 - y_true) * np.log(1 - y_pred + eps))
 
 
-def sigmoid(ys):
+def sigmoid(y):
     """Simple sigmoid for logreg using numpy"""
-    return 1 / (1 + np.exp(-ys))
+    return 1 / (1 + np.exp(-y))
 
 # ================================================
-
-
-def add_bias(X, bias):
-    """X is a NxM matrix: N datapoints, M features
-    bias is a bias term, -1 or 1, or any other scalar. Use 0 for no bias
-    Return a Nx(M+1) matrix with added bias in position zero
-    """
-    #  Example:
-    # [x1, x2]     [1, x1, x2]
-    # [x3, x4]  -> [1, x3, x4]
-    # [x5, x5]     [1, x5, x6]
-    N = X.shape[0]
-    biases = np.ones((N, 1)) * bias  # Make an N*1 matrix of biases
-    # Concatenate the column of biases in front of the columns of X.
-    return np.concatenate((biases, X), axis=1)
-
-
-def accuracy(predicted, gold):
-    """Compares predicted to actual (gold)"""
-    return np.mean(predicted == gold)
-
-
-class NumpyClassifier:
-    """Common methods to all Numpy classifiers --- if any"""
 
 
 class NumpyLogRegClass(NumpyClassifier):
@@ -64,7 +41,7 @@ class NumpyLogRegClass(NumpyClassifier):
         self._epochs_trained = 0    # keep track of training duration
 
 
-    def fit(self, X_train, t_train, tol=0, n_epochs_no_update=5, validation=None, lr=0.1, epochs=10):
+    def fit(self, X_train, t_train, tol=0.0, n_epochs_no_update=5, validation=None, lr=0.1, epochs=10):
         """
         X_train is a NxM matrix, N data points, M features
             - training data
@@ -113,7 +90,7 @@ class NumpyLogRegClass(NumpyClassifier):
 
 
             # NEW
-            # loss and accuracy for training data       (used for manual testing)
+            # loss and accuracy for training data
             train_loss = bce(y_true=t_train, y_pred=activation)
             train_acc = accuracy(predicted=(activation>0.5), gold=t_train)
             self.loss_train.append(float(train_loss))
@@ -122,9 +99,9 @@ class NumpyLogRegClass(NumpyClassifier):
 
             # loss and accuracy for validation data
             if validation:
-                Z_val = X_val @ weights
-                pred_dev = sigmoid(Z_val)
+                pred_dev = sigmoid(X_val @ weights)
 
+                # loss + accuracy calculation
                 dev_loss = bce(y_true=t_val, y_pred=pred_dev)
                 dev_acc = accuracy(predicted=(pred_dev>0.5), gold=t_val)
                 self.loss_dev.append(float(dev_loss))
@@ -143,7 +120,6 @@ class NumpyLogRegClass(NumpyClassifier):
                     print(f"== Early stopping ==\nEpoch {epoch+1:3} - Loss: {dev_loss:.4f}, Accuracy: {(dev_acc*100):.2f}%\t(dev)")
                     self._epochs_trained = epoch + 1
                     break
-
 
 
             # print occasionally
@@ -207,7 +183,7 @@ def main():
     # hyperparameters
     learning_rate = 1.0
     epochs = 1000
-    tolerance = 1.0
+    tolerance =1.0
     patience = 10
 
     print(f"__Hyperparameters__\n"  + 
