@@ -32,13 +32,13 @@ class NumpyLogRegClass(NumpyClassifier):
 
     def __init__(self, bias=-1):
         self.bias = bias
-        self.loss_train = []        # loss for training data   
+        self.loss_train = []        # loss for training data
         self.accuracies_train = []  # accuarcies for training data
 
         self.loss_dev = []          # loss for validation data
         self.accuracies_dev = []    # accuracies for validation data
 
-        self._epochs_trained = 0    # keep track of training duration
+        self.epochs_trained = 0    # keep track of training duration
 
 
     def fit(self, X_train, t_train, tol=0.0, n_epochs_no_update=5, validation=None, lr=0.1, epochs=10):
@@ -158,7 +158,7 @@ class NumpyLogRegClass(NumpyClassifier):
 
 def main():
     from data import X_train, t2_train, X_val, t2_val
-    print("\n"*5)
+    print("="*40+"\n\n")
 
     # ----------------- 1. normalization ---------------- 
     # do axis=0 > column, due to per-feature
@@ -177,29 +177,32 @@ def main():
 
 
     # ---------------- 2. Regression ---------------- --
-
     cl = NumpyLogRegClass()
-    
+
     # hyperparameters
     learning_rate = 1.0
     epochs = 1000
     tolerance =1.0
     patience = 10
 
-    print(f"__Hyperparameters__\n"  + 
-          f"- Learning:   [{learning_rate}]\n" +
-          f"- Epochs:     [{epochs}]\n" +
-          f"- Tolerance:  [{tolerance}]\n"+
-          f"- Patience:   [{patience}]\n\n"
+    print(
+        f"__Hyperparameters__\n" +
+        f"- Learning:   [{learning_rate}]\n" +
+        f"- Epochs:     [{epochs}]\n" +
+        f"- Tolerance:  [{tolerance}]\n" +
+        f"- Patience:   [{patience}]\n\n"
     )
+
+    # training   (seen data)
     cl.fit(
         X_train=X_train,
         t_train=t2_train,
         tol=tolerance, n_epochs_no_update=patience, # hyperparameters (1)
         lr=learning_rate, epochs=epochs,            # hyperparameters (2)
-        validation=(X_val, t2_val))                 # training   (seen data)
-    predictions = cl.predict(X_val)                 # predicting (unseen data)
+        validation=(X_val, t2_val)
+    )
 
+    predictions = cl.predict(X_val)                 # predicting (unseen data)
     print("\nAccuracy on the validation set:", accuracy(predictions, t2_val))
     # ---------------- ---------------- ---------------- 
 
@@ -209,17 +212,16 @@ def main():
     # accuracy curve
     acc_train = cl.accuracies_train
     acc_dev = cl.accuracies_dev
-    plot_curves(res_train=acc_train, res_dev=acc_dev, label = "Accuracy")
+    plot_curves(res_train=acc_train, res_dev=acc_dev, label="Accuracy")
 
     # loss curve
     loss_train = cl.loss_train
     loss_dev = cl.loss_dev
-    plot_curves(res_train=loss_train, res_dev=loss_dev, label = "Loss")
+    plot_curves(res_train=loss_train, res_dev=loss_dev, label="Loss")
 
     plot_decision_regions(X_train, t2_train, cl)
-
     # ---------------- ---------------- ---------------- 
-    print("\n"*5)
+    print("\n\n"+"="*40)
 
 
 if __name__ == "__main__":

@@ -67,7 +67,7 @@ class NumpyLinRegClass(NumpyClassifier):
             loss = mse(y_true=t_train, y_pred=prediction)
             acc = accuracy(predicted=(prediction > 0.5), gold=t_train)
 
-            # print occationally
+            # print occasionally
             if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
                 print(f"Epoch {epoch+1:3} - Loss: {loss:.4f}, Accuracy: {(acc*100):.2f}%\t(train)")
 
@@ -87,7 +87,7 @@ class NumpyLinRegClass(NumpyClassifier):
 
 def main():
     from data import X_train, t2_train, X_val, t2_val
-    print("\n"*5)
+    print("="*40+"\n\n")
 
     # ----------------- 1. normalization ---------------- 
     train_mean = X_train.mean(axis=0)
@@ -101,17 +101,33 @@ def main():
 
     # ---------------- 2. Regression ---------------- --
     cl = NumpyLinRegClass()
+
+    # hyperparameters
+    learning_rate = 1.0
+    epochs = 3
+
+    print(
+        f"__Hyperparameters__\n" +
+        f"- Learning:   [{learning_rate}]\n" +
+        f"- Epochs:     [{epochs}]\n"
+    )
+
+    # training (seen data)
     cl.fit(
         X_train=X_train, 
         t_train=t2_train, 
-        lr=1, epochs=3)                         # training   (seen data)
+        lr=learning_rate, epochs=epochs
+    )
+
     predictions = cl.predict(X_val)             # predicting (unseen data)
-
     print("\nAccuracy on the validation set:", accuracy(predictions, t2_val))
+    # ---------------- ---------------- ----------------
 
+
+    # ---------------- 3. Plotting ---------------- ----
     # plot_decision_regions(X_train, t2_train, cl)
-
-    print("\n"*5)
+    # ---------------- ---------------- ----------------
+    print("\n\n"+"="*40)
 
 
 if __name__ == "__main__":
