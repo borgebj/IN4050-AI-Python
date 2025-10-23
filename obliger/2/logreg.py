@@ -30,15 +30,16 @@ def sigmoid(y):
 class NumpyLogRegClass(NumpyClassifier):
     """Logistic regression using sigmoid + BCE"""
 
-    def __init__(self, bias=-1):
+    def __init__(self, bias=-1, verbose=False):
         self.bias = bias
         self.loss_train = []        # loss for training data
-        self.accuracies_train = []  # accuarcies for training data
+        self.accuracies_train = []  # accuracies for training data
 
         self.loss_dev = []          # loss for validation data
         self.accuracies_dev = []    # accuracies for validation data
 
-        self.epochs_trained = 0    # keep track of training duration
+        self.epochs_trained = 0     # keep track of training duration
+        self.verbose = verbose      # optional printing
 
 
     def fit(self, X_train, t_train, tol=0.0, n_epochs_no_update=5, validation=None, lr=0.1, epochs=10):
@@ -117,17 +118,18 @@ class NumpyLogRegClass(NumpyClassifier):
 
                 # stopping early (tol and n_epochs)
                 if epoch_no_improvement >= n_epochs_no_update:
-                    print(f"== Early stopping ==\nEpoch {epoch+1:3} - Loss: {dev_loss:.4f}, Accuracy: {(dev_acc*100):.2f}%\t(dev)")
+                    if self.verbose: print(f"== Early stopping ==\nEpoch {epoch+1:3} - Loss: {dev_loss:.4f}, Accuracy: {(dev_acc*100):.2f}%\t(dev)")
                     self._epochs_trained = epoch + 1
                     break
 
 
             # print occasionally
-            if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
-                if validation:
-                    print(f"Epoch {epoch+1:3} - Loss: {dev_loss:.4f}, Accuarcy: {(dev_loss*100):.2f}%\t(dev)")
-                else:
-                    print(f"Epoch {epoch+1:3} - Loss: {train_loss:.4f}, Accuracy: {(train_acc*100):.2f}%\t(train))")
+            if self.verbose:
+                if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
+                    if validation:
+                        print(f"Epoch {epoch+1:3} - Loss: {dev_loss:.4f}, Accuarcy: {(dev_loss*100):.2f}%\t(dev)")
+                    else:
+                        print(f"Epoch {epoch+1:3} - Loss: {train_loss:.4f}, Accuracy: {(train_acc*100):.2f}%\t(train))")
 
 
     def predict(self, X, threshold=0.5):
@@ -177,7 +179,7 @@ def main():
 
 
     # ---------------- 2. Regression ---------------- --
-    cl = NumpyLogRegClass()
+    cl = NumpyLogRegClass(verbose=True)
 
     # hyperparameters
     learning_rate = 1.0

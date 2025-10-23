@@ -47,11 +47,33 @@ class NumpyOneVsRest(NumpyClassifier):
         print("Classes")
         print(classes, end="\n\n")
 
-        X_train = X_train[:10]
-        t_train = t_train[:10]
+        X_train = X_train[:5]
+        t_train = t_train[:5]
 
         for ((f1, f2), lab) in zip(X_train, t_train):
             print(f"[{f1:7.2f}  {f2:7.2f}]  ->  {lab:>2}")
+
+        for c in classes:
+            # mark class C in training data
+            t_class = (t_train == c).astype('int')
+
+            # one classifier each class
+            ccl = NumpyLogRegClass()
+            ccl.fit(
+                X_train, t_class,
+                lr=lr, epochs=epochs
+            )
+            self.classifiers[c] = ccl
+
+            print(f"{c} -> {t_class}")
+
+            # for each classifier
+            # get prediction
+            # get highest prediction
+
+        print("\nClassifiers")
+        print(self.classifiers)
+
 
         # binary classes (t_class)
         # ([0, 1, 3 ...]

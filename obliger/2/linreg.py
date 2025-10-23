@@ -6,7 +6,7 @@ from plotter import plot_decision_regions
 # ============== NEW FUNCTIONS ===================
 def standard(X, mean, std):
     """Standard scaler aka Z-score
-    Usses passed mean and std (must use same as training!)"""
+    Uses passed mean and std (must use same as training!)"""
     return (X - mean) / std
 
 
@@ -125,7 +125,7 @@ def main():
 
 
     # ---------------- 3. Plotting ---------------- ----
-    # plot_decision_regions(X_train, t2_train, cl)
+    plot_decision_regions(X_train, t2_train, cl)
     # ---------------- ---------------- ----------------
     print("\n\n"+"="*40)
 
