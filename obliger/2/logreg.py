@@ -1,5 +1,5 @@
+from utility import NumpyClassifier, add_bias, accuracy, parse_args
 from plotter import plot_curves, plot_decision_regions
-from utility import NumpyClassifier, add_bias, accuracy
 import numpy as np
 
 
@@ -61,7 +61,6 @@ class NumpyLogRegClass(NumpyClassifier):
 
         the target class values for the training data
         """
-
         if self.bias:
             X_train = add_bias(X_train, self.bias)
 
@@ -118,7 +117,7 @@ class NumpyLogRegClass(NumpyClassifier):
 
                 # stopping early (tol and n_epochs)
                 if epoch_no_improvement >= n_epochs_no_update:
-                    if self.verbose: print(f"== Early stopping ==\nEpoch {epoch+1:3} - Loss: {dev_loss:.4f}, Accuracy: {(dev_acc*100):.2f}%\t(dev)")
+                    if self.verbose: print(f"Epoch {epoch+1:3} - Loss: {dev_loss:.4f}, Accuracy: {(dev_acc*100):.2f}%\t(dev)")
                     self._epochs_trained = epoch + 1
                     break
 
@@ -136,7 +135,6 @@ class NumpyLogRegClass(NumpyClassifier):
         """X is a KxM matrix for some K>=1
         predict the value for each point in X
         """
-
         if self.bias:
             X = add_bias(X, self.bias)
 
@@ -161,8 +159,17 @@ class NumpyLogRegClass(NumpyClassifier):
 def main():
     from data import X_train, t2_train, X_val, t2_val
     print("="*40+"\n\n")
+    # ---------------- 0. Command-line-args -------------
+    args = parse_args()
+    learning_rate = args.learning_rate  # default: 0.1  (best: 1.0)
+    epochs = args.epochs                # default: 3    (best: ~100)
+    tolerance = args.tolerance          # default 1.0   (best: 1.0)
+    patience = args.patience            # default: 10   (best: 2)
+    verbose = args.verbose              # default: False
+    #  ---------------- ---------------- ----------------
 
-    # ----------------- 1. normalization ---------------- 
+
+    # ----------------- 1. normalization ----------------
     # do axis=0 > column, due to per-feature
     # we extract mean and std from TRAINING, ensuring others use same scale as trained on
     train_mean = X_train.mean(axis=0)
@@ -175,24 +182,19 @@ def main():
     # Normalizing validation data
     norm_val = standard(X_val, train_mean, train_std)
     X_val = norm_val
-    # ---------------- ---------------- ---------------- 
+    # ---------------- ---------------- ----------------
 
 
     # ---------------- 2. Regression ---------------- --
-    cl = NumpyLogRegClass(verbose=True)
+    cl = NumpyLogRegClass(verbose=verbose)
 
-    # hyperparameters
-    learning_rate = 1.0
-    epochs = 1000
-    tolerance =1.0
-    patience = 10
 
     print(
         f"__Hyperparameters__\n" +
         f"- Learning:   [{learning_rate}]\n" +
         f"- Epochs:     [{epochs}]\n" +
         f"- Tolerance:  [{tolerance}]\n" +
-        f"- Patience:   [{patience}]\n\n"
+        f"- Patience:   [{patience}]\n"
     )
 
     # training   (seen data)
@@ -210,7 +212,6 @@ def main():
 
 
     # ---------------- 3. Plotting ---------------- ----
-
     # accuracy curve
     acc_train = cl.accuracies_train
     acc_dev = cl.accuracies_dev

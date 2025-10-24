@@ -1,6 +1,6 @@
-import numpy as np
-from utility import NumpyClassifier, add_bias, accuracy
+from utility import NumpyClassifier, add_bias, accuracy, parse_args
 from plotter import plot_decision_regions
+import numpy as np
 
 
 # ============== NEW FUNCTIONS ===================
@@ -25,8 +25,10 @@ def mse(y_true, y_pred):
 class NumpyLinRegClass(NumpyClassifier):
     """Logistic regression using MSE"""
 
-    def __init__(self, bias=-1):
+    def __init__(self, bias=-1, verbose=False):
         self.bias = bias
+        self.verbose = verbose      # optional printing
+
 
     def fit(self, X_train, t_train, lr=0.1, epochs=10):
         """
@@ -44,7 +46,6 @@ class NumpyLinRegClass(NumpyClassifier):
 
         the target class values for the training data
         """
-
         if self.bias:
             X_train = add_bias(X_train, self.bias)
 
@@ -68,14 +69,14 @@ class NumpyLinRegClass(NumpyClassifier):
             acc = accuracy(predicted=(prediction > 0.5), gold=t_train)
 
             # print occasionally
-            if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
-                print(f"Epoch {epoch+1:3} - Loss: {loss:.4f}, Accuracy: {(acc*100):.2f}%\t(train)")
+            if self.verbose:
+                if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
+                    print(f"Epoch {epoch+1:3} - Loss: {loss:.4f}, Accuracy: {(acc*100):.2f}%\t(train)")
 
 
     def predict(self, X, threshold=0.5):
         """X is a KxM matrix for some K>=1
         predict the value for each point in X"""
-
         if self.bias:
             X = add_bias(X, self.bias)
 
@@ -88,6 +89,13 @@ class NumpyLinRegClass(NumpyClassifier):
 def main():
     from data import X_train, t2_train, X_val, t2_val
     print("="*40+"\n\n")
+    # ---------------- 0. Command-line-args -------------
+    args = parse_args()
+    learning_rate = args.learning_rate  # default: 0.1  (best: 1.0  w/scaler)
+    epochs = args.epochs                # default: 3    (best: 2    w/ scaler)
+    verbose = args.verbose              # default: False
+    #  ---------------- ---------------- ----------------
+
 
     # ----------------- 1. normalization ---------------- 
     train_mean = X_train.mean(axis=0)
@@ -100,11 +108,7 @@ def main():
 
 
     # ---------------- 2. Regression ---------------- --
-    cl = NumpyLinRegClass()
-
-    # hyperparameters
-    learning_rate = 1.0
-    epochs = 3
+    cl = NumpyLinRegClass(verbose=verbose)
 
     print(
         f"__Hyperparameters__\n" +

@@ -1,4 +1,4 @@
-from utility import NumpyClassifier, add_bias, accuracy
+from utility import NumpyClassifier, accuracy, parse_args
 from logreg import NumpyLogRegClass, standard
 from plotter import plot_decision_regions, plot_curves
 import numpy as np
@@ -7,7 +7,7 @@ import numpy as np
 class NumpyOneVsRest(NumpyClassifier):
     """One-vs-rest multi-class logistic regression"""
 
-    def __init__(self, bias=-1):
+    def __init__(self, bias=-1, verbose=False):
         self.bias = bias
 
         self.loss_train = []
@@ -17,12 +17,10 @@ class NumpyOneVsRest(NumpyClassifier):
         self.accuracies_dev = []
 
         self._epochs_trained = 0
-        self.classifiers = {}       # keep track of binary classifiers
+        self.verbose = verbose      # optional printing
 
 
-
-
-    def fit(self, X_train, t_train, lr=0.1, epochs=10):
+    def fit(self, X_train, t_train, tol=0.0, n_epochs_no_update=5, validation=None, lr=0.1, epochs=10):
         """
         X_train is a NxM matrix, N data points, M features
             - training data
@@ -43,66 +41,71 @@ class NumpyOneVsRest(NumpyClassifier):
         the target class values for the training data
         """
 
+        # all unique classes [0,1,2,3,4]
         classes = np.unique(t_train)
-        print("Classes")
-        print(classes, end="\n\n")
 
-        X_train = X_train[:5]
-        t_train = t_train[:5]
+        self.classifiers = {}
 
-        for ((f1, f2), lab) in zip(X_train, t_train):
-            print(f"[{f1:7.2f}  {f2:7.2f}]  ->  {lab:>2}")
-
+        # mark class C in training data
         for c in classes:
-            # mark class C in training data
             t_class = (t_train == c).astype('int')
 
-            # one classifier each class
-            ccl = NumpyLogRegClass()
-            ccl.fit(
-                X_train, t_class,
-                lr=lr, epochs=epochs
-            )
+            # one classifier each class - train and save
+            ccl = NumpyLogRegClass(self.bias, self.verbose)
+
+            if validation:
+                (X_val, t_val) = validation
+                t_class_val = (t_val == c).astype('int')
+
+                if self.verbose: print(f"\nclass{c}")
+                ccl.fit(
+                    X_train, t_class,
+                    lr=lr, epochs=epochs,                            # hyperparameters (1)
+                    tol=tol, n_epochs_no_update=n_epochs_no_update,  # hyperparameters (2)
+                    validation=(X_val, t_class_val)
+                )
+            else:
+                ccl.fit(
+                    X_train, t_class,
+                    lr=lr, epochs=epochs
+                )
+
+
             self.classifiers[c] = ccl
-
-            print(f"{c} -> {t_class}")
-
-            # for each classifier
-            # get prediction
-            # get highest prediction
-
-        print("\nClassifiers")
-        print(self.classifiers)
-
-
-        # binary classes (t_class)
-        # ([0, 1, 3 ...]
-        # -> [False, True, False, ...]
-        # -> [0, 1, 0, ...]
-
-        # cl.fit(X_train, t_class)
-        # -> get probability (predict_probability)
-        # collect all probabilities (one per class)
-        # choose class with the highest probability
-
-        # probs = [
-        #     clf_0.predict_probability(x),
-        #     clf_1.predict_probability(x),
-        #     clf_2.predict_probability(x),
-        #     clf_3.predict_probability(x),
-        #     clf_4.predict_probability(x),
-        # ]
-        # predicted_class = np.argmax(probs)
 
 
 
     def predict(self, X):
-        return None
+        """X is a KxM matrix for some K>=1
+        predict the value for each point in X using OVR
+        """
+        # turns (class x sample) to (sample x class), making row = sample
+        probs = np.column_stack([
+            ccl.predict_probability(X)
+            for c, ccl in self.classifiers.items()
+        ])
+        # list of samples with their probs.   ->    Sample 1 = [class1, class2, ...]
+        pred_idx = np.argmax(probs, axis=1)  # <-- highest prob. idx across rows ↑
+
+        # get pred. class from classifiers using idx  e.g:  idx 2 from [0,2,4] is class 4
+        class_keys = list(self.classifiers.keys())
+        pred_class = np.array(class_keys)[pred_idx]
+
+        return pred_class
 
 
 def main():
     from data import X_train, t_multi_train, X_val, t_multi_val
     print("="*40+"\n\n")
+    # ---------------- 0. Command-line-args -------------
+    args = parse_args()
+    learning_rate = args.learning_rate  # default: 0.1  (best: 1.0)
+    epochs = args.epochs                # default: 3    (best: 1000)
+    tolerance = args.tolerance          # default 1.0   (best: 1.0)
+    patience = args.patience            # default: 10   (best: 885)
+    verbose = args.verbose              # default: False
+    #  ---------------- ---------------- ----------------
+
 
     # ----------------- 1. normalization ----------------
     # do axis=0 > column, due to per-feature
@@ -121,26 +124,22 @@ def main():
 
 
     # ---------------- 2. Regression ---------------- --
-    cl = NumpyOneVsRest()
-
-    # hyperparameters
-    learning_rate = 1.0
-    epochs = 1000
-    tolerance =1.0
-    patience = 10
+    cl = NumpyOneVsRest(verbose=verbose)
 
     print(
         f"__Hyperparameters__\n" +
         f"- Learning:   [{learning_rate}]\n" +
         f"- Epochs:     [{epochs}]\n" +
         f"- Tolerance:  [{tolerance}]\n" +
-        f"- Patience:   [{patience}]\n\n"
+        f"- Patience:   [{patience}]\n"
     )
 
     # training (seen data)
     cl.fit(
-        X_val,
-        t_multi_val
+        X_train=X_train, t_train=t_multi_train,
+        tol=tolerance, n_epochs_no_update=patience, # hyperparameters (1)
+        lr=learning_rate, epochs=epochs,            # hyperparameters (2)
+        validation=(X_val, t_multi_val)
     )
 
     predictions = cl.predict(X_val)                 # predicting (unseen data)
@@ -149,19 +148,7 @@ def main():
 
 
     # ---------------- 3. Plotting ---------------- ----
-
-    # accuracy curve
-    acc_train = cl.accuracies_train
-    acc_dev = cl.accuracies_dev
-    # plot_curves(res_train=acc_train, res_dev=acc_dev, label="Accuracy")
-
-    # loss curve
-    loss_train = cl.loss_train
-    loss_dev = cl.loss_dev
-    # plot_curves(res_train=loss_train, res_dev=loss_dev, label="Loss")
-
-    # plot_decision_regions(X_train, t_multi_train, cl)
-
+    plot_decision_regions(X_train, t_multi_train, cl)
     # ---------------- ---------------- ----------------
     print("\n\n"+"="*40)
 
