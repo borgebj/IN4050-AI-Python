@@ -38,7 +38,8 @@ class NumpyOneVsRest(NumpyClassifier):
         validation
             - optional validation set for loss and accuracies(X_val, t_val)
 
-        the target class values for the training data
+        tol, n_epochs_no_update
+            - decides when to stop early, used in logreg
         """
 
         # all unique classes [0,1,2,3,4]
@@ -53,6 +54,7 @@ class NumpyOneVsRest(NumpyClassifier):
             # one classifier each class - train and save
             ccl = NumpyLogRegClass(self.bias, self.verbose)
 
+            # if validation provided, for logreg
             if validation:
                 (X_val, t_val) = validation
                 t_class_val = (t_val == c).astype('int')
@@ -64,13 +66,14 @@ class NumpyOneVsRest(NumpyClassifier):
                     tol=tol, n_epochs_no_update=n_epochs_no_update,  # hyperparameters (2)
                     validation=(X_val, t_class_val)
                 )
+            # run with default
             else:
                 ccl.fit(
                     X_train, t_class,
                     lr=lr, epochs=epochs
                 )
 
-
+            # save each classifier
             self.classifiers[c] = ccl
 
 

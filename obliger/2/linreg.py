@@ -43,9 +43,8 @@ class NumpyLinRegClass(NumpyClassifier):
 
         epochs
             - over how many epochs the model trains
-
-        the target class values for the training data
         """
+        
         if self.bias:
             X_train = add_bias(X_train, self.bias)
 

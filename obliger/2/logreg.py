@@ -59,8 +59,10 @@ class NumpyLogRegClass(NumpyClassifier):
         validation
             - optional validation set for loss and accuracies(X_val, t_val)
 
-        the target class values for the training data
+        tol, n_epochs_no_update
+            - decides when to stop early
         """
+
         if self.bias:
             X_train = add_bias(X_train, self.bias)
 
