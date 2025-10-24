@@ -35,8 +35,8 @@ class NumpyLogRegClass(NumpyClassifier):
         self.loss_train = []        # loss for training data
         self.accuracies_train = []  # accuracies for training data
 
-        self.loss_dev = []          # loss for validation data
-        self.accuracies_dev = []    # accuracies for validation data
+        self.loss_val = []          # loss for validation data
+        self.accuracies_val = []    # accuracies for validation data
 
         self.epochs_trained = 0     # keep track of training duration
         self.verbose = verbose      # optional printing
@@ -76,50 +76,52 @@ class NumpyLogRegClass(NumpyClassifier):
         self.weights = weights = np.zeros(M)     # weights are all 0 = [0.0, 0.0, ..., 0.0]
 
         # keep track of lowest loss and epoch with improvements
-        lowest_dev_loss = np.inf
+        lowest_val_loss = np.inf
         epoch_no_improvement = 0
 
         for epoch in range(epochs):
 
-            # parts of weight update
-            Z = X_train @ weights                # Z = X * W
-            activation = sigmoid(Z)              # A = sigmoid(Z)                  (NEW - logreg)
-            error = (activation - t_train)       # L = (Y - T)                     (BCE derivative w/ sigmoid)
-            gradient = (X_train.T @ error) / N  # gradient avg. over all samples   (Y.der. * BCE+sigmoid.der.)
+            # forward pass
+            Z = X_train @ weights                # Z = XW
+            prediction = sigmoid(Z)              # A = sigmoid(Z)
+
+            # gradient (sigmoid derivative w/ bce)
+            error = (prediction - t_train)       # L = (Y - T)
+            gradient = (X_train.T @ error) / N  # gradient avg. over samples
 
             # weight update using gradient
             weights -= lr * gradient
 
-
-            # NEW
-            # loss and accuracy for training data
-            train_loss = bce(y_true=t_train, y_pred=activation)
-            train_acc = accuracy(predicted=(activation>0.5), gold=t_train)
+            # training loss
+            train_loss = bce(y_true=t_train, y_pred=prediction)
             self.loss_train.append(float(train_loss))
+
+            # training accuracy
+            train_acc = accuracy(predicted=(prediction>0.5), gold=t_train)
             self.accuracies_train.append(float(train_acc))
 
 
             # loss and accuracy for validation data
             if validation:
-                pred_dev = sigmoid(X_val @ weights)
+                pred_val = sigmoid(X_val @ weights)
 
                 # loss + accuracy calculation
-                dev_loss = bce(y_true=t_val, y_pred=pred_dev)
-                dev_acc = accuracy(predicted=(pred_dev>0.5), gold=t_val)
-                self.loss_dev.append(float(dev_loss))
-                self.accuracies_dev.append(float(dev_acc))
+                val_loss = bce(y_true=t_val, y_pred=pred_val)
+                val_acc = accuracy(predicted=(pred_val>0.5), gold=t_val)
+                self.loss_val.append(float(val_loss))
+                self.accuracies_val.append(float(val_acc))
 
                 # measuring loss based on tolerance
                 if tol is not None:
-                    if (lowest_dev_loss - dev_loss) > tol:
-                        lowest_dev_loss = dev_loss
+                    if (lowest_val_loss - val_loss) > tol:
+                        lowest_val_loss = val_loss
                         epoch_no_improvement = 0
                     else:
                         epoch_no_improvement += 1
 
                 # stopping early (tol and n_epochs)
                 if epoch_no_improvement >= n_epochs_no_update:
-                    if self.verbose: print(f"Epoch {epoch+1:3} - Loss: {dev_loss:.4f}, Accuracy: {(dev_acc*100):.2f}%\t(dev)")
+                    if self.verbose: print(f"Epoch {epoch+1:3} - Loss: {val_loss:.4f}, Accuracy: {(val_acc*100):.2f}%\t(dev)")
                     self._epochs_trained = epoch + 1
                     break
 
@@ -128,7 +130,7 @@ class NumpyLogRegClass(NumpyClassifier):
             if self.verbose:
                 if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
                     if validation:
-                        print(f"Epoch {epoch+1:3} - Loss: {dev_loss:.4f}, Accuarcy: {(dev_loss*100):.2f}%\t(dev)")
+                        print(f"Epoch {epoch+1:3} - Loss: {val_loss:.4f}, Accuarcy: {(val_acc*100):.2f}%\t(dev)")
                     else:
                         print(f"Epoch {epoch+1:3} - Loss: {train_loss:.4f}, Accuracy: {(train_acc*100):.2f}%\t(train))")
 
@@ -216,13 +218,13 @@ def main():
     # ---------------- 3. Plotting ---------------- ----
     # accuracy curve
     acc_train = cl.accuracies_train
-    acc_dev = cl.accuracies_dev
-    plot_curves(res_train=acc_train, res_dev=acc_dev, label="Accuracy")
+    acc_val = cl.accuracies_val
+    plot_curves(res_train=acc_train, res_dev=acc_val, label="Accuracy")
 
     # loss curve
     loss_train = cl.loss_train
-    loss_dev = cl.loss_dev
-    plot_curves(res_train=loss_train, res_dev=loss_dev, label="Loss")
+    loss_val = cl.loss_val
+    plot_curves(res_train=loss_train, res_dev=loss_val, label="Loss")
 
     plot_decision_regions(X_train, t2_train, cl)
     # ---------------- ---------------- ---------------- 

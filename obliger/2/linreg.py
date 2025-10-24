@@ -54,17 +54,20 @@ class NumpyLinRegClass(NumpyClassifier):
 
         for epoch in range(epochs):
 
-            # parts of weight update
+            # "forward pass"
             prediction = X_train @ weights      # Y = X * W
+
+            # gradient
             error = (prediction - t_train)      # L = (Y - T)                     (MSE derivative)
             gradient = (X_train.T @ error) / N  # gradient avg. over all samples  (Y.der. * MSE.der.)
 
             # weight update using gradient
             weights -= lr * gradient
 
-
-            # loss and accuracy for training data       (used for manual testing)
+            # training loss
             loss = mse(y_true=t_train, y_pred=prediction)
+
+            # training accuracy
             acc = accuracy(predicted=(prediction > 0.5), gold=t_train)
 
             # print occasionally

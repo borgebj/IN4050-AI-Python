@@ -13,8 +13,8 @@ class NumpyOneVsRest(NumpyClassifier):
         self.loss_train = []
         self.accuracies_train = []
 
-        self.loss_dev = []
-        self.accuracies_dev = []
+        self.loss_val = []
+        self.accuracies_val = []
 
         self._epochs_trained = 0
         self.verbose = verbose      # optional printing
