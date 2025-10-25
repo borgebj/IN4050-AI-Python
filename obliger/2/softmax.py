@@ -41,11 +41,9 @@ class NumpySoftmax(NumpyClassifier):
     def __init__(self, bias=-1, verbose=False):
         self.bias = bias
 
-        self.loss_train = []
-        self.accuracies_train = []
-
-        self.loss_val = []
-        self.accuracies_val = []
+        # loss and accuracies
+        self.loss_train, self.loss_val = [], []
+        self.accuracies_train, self.accuracies_val = [], []
 
         self._epochs_trained = 0
         self.verbose = verbose      # optional printing
@@ -150,13 +148,13 @@ class NumpySoftmax(NumpyClassifier):
                     self._epochs_trained = epoch + 1
                     break
 
-                # print occasionally
-                if self.verbose:
-                    if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
-                        if validation:
-                            print(f"Epoch {epoch+1:3} - Loss: {val_loss:.4f}, Accuarcy: {(val_acc*100):.2f}%\t(dev)")
-                        else:
-                            print(f"Epoch {epoch+1:3} - Loss: {train_loss:.4f}, Accuracy: {(train_acc*100):.2f}%\t(train))")
+            # print occasionally
+            if self.verbose:
+                if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
+                    if validation:
+                        print(f"Epoch {epoch+1:3} - Loss: {val_loss:.4f}, Accuarcy: {(val_acc*100):.2f}%\t(dev)")
+                    else:
+                        print(f"Epoch {epoch+1:3} - Loss: {train_loss:.4f}, Accuracy: {(train_acc*100):.2f}%\t(train)")
 
 
 
@@ -194,8 +192,6 @@ def main():
 
 
     # ----------------- 1. normalization ----------------
-    # do axis=0 > column, due to per-feature
-    # we extract mean and std from TRAINING, ensuring others use same scale as trained on
     train_mean = X_train.mean(axis=0)
     train_std = X_train.std(axis=0)
 

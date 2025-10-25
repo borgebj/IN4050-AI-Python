@@ -11,11 +11,9 @@ class NumpyOneVsRest(NumpyClassifier):
     def __init__(self, bias=-1, verbose=False):
         self.bias = bias
 
-        self.loss_train = []
-        self.accuracies_train = []
-
-        self.loss_val = []
-        self.accuracies_val = []
+        # loss and accuracies
+        self.loss_train, self.loss_val = [], []
+        self.accuracies_train, self.accuracies_val = [], []
 
         self._epochs_trained = 0
         self.verbose = verbose      # optional printing
@@ -50,29 +48,24 @@ class NumpyOneVsRest(NumpyClassifier):
 
         # mark class C in training data
         for c in classes:
+
+            # marks label C:  3: [0, 3, 2] -> [False, True, False] -> [0, 1, 0]
             t_class = (t_train == c).astype('int')
 
             # one classifier each class - train and save
             ccl = NumpyLogRegClass(self.bias, self.verbose)
 
-            # if validation provided, for logreg
+            # if validation provided
             if validation:
                 (X_val, t_val) = validation
                 t_class_val = (t_val == c).astype('int')
 
                 if self.verbose: print(f"\nclass{c}")
-                ccl.fit(
-                    X_train, t_class,
-                    lr=lr, epochs=epochs,                            # hyperparameters (1)
-                    tol=tol, n_epochs_no_update=n_epochs_no_update,  # hyperparameters (2)
-                    validation=(X_val, t_class_val)
-                )
+                ccl.fit(X_train, t_class, lr, epochs, tol, n_epochs_no_update, (X_val, t_class_val))
+
             # run with default
             else:
-                ccl.fit(
-                    X_train, t_class,
-                    lr=lr, epochs=epochs
-                )
+                ccl.fit(X_train, t_class, lr, epochs)
 
             # save each classifier
             self.classifiers[c] = ccl
@@ -112,8 +105,6 @@ def main():
 
 
     # ----------------- 1. normalization ----------------
-    # do axis=0 > column, due to per-feature
-    # we extract mean and std from TRAINING, ensuring others use same scale as trained on
     train_mean = X_train.mean(axis=0)
     train_std = X_train.std(axis=0)
 

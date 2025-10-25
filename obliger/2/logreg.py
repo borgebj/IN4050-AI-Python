@@ -27,17 +27,16 @@ class NumpyLogRegClass(NumpyClassifier):
 
     def __init__(self, bias=-1, verbose=False):
         self.bias = bias
-        self.loss_train = []        # loss for training data
-        self.accuracies_train = []  # accuracies for training data
 
-        self.loss_val = []          # loss for validation data
-        self.accuracies_val = []    # accuracies for validation data
+        # loss and accuracies
+        self.loss_train, self.loss_val = [], []              # loss for training, validation data
+        self.accuracies_train, self.accuracies_val = [], []  # accuracies for training, validation data
 
         self.epochs_trained = 0     # keep track of training duration
         self.verbose = verbose      # optional printing
 
 
-    def fit(self, X_train, t_train, tol=0.0, n_epochs_no_update=5, validation=None, lr=0.1, epochs=10):
+    def fit(self, X_train, t_train, lr=0.1, epochs=10, tol=0.0, n_epochs_no_update=5, validation=None):
         """
         X_train is a NxM matrix, N data points, M features
             - training data
@@ -127,7 +126,7 @@ class NumpyLogRegClass(NumpyClassifier):
                     if validation:
                         print(f"Epoch {epoch+1:3} - Loss: {val_loss:.4f}, Accuarcy: {(val_acc*100):.2f}%\t(dev)")
                     else:
-                        print(f"Epoch {epoch+1:3} - Loss: {train_loss:.4f}, Accuracy: {(train_acc*100):.2f}%\t(train))")
+                        print(f"Epoch {epoch+1:3} - Loss: {train_loss:.4f}, Accuracy: {(train_acc*100):.2f}%\t(train)")
 
 
     def predict(self, X, threshold=0.5):
@@ -169,8 +168,6 @@ def main():
 
 
     # ----------------- 1. normalization ----------------
-    # do axis=0 > column, due to per-feature
-    # we extract mean and std from TRAINING, ensuring others use same scale as trained on
     train_mean = X_train.mean(axis=0)
     train_std = X_train.std(axis=0)
 
@@ -200,8 +197,8 @@ def main():
     cl.fit(
         X_train=X_train,
         t_train=t2_train,
-        tol=tolerance, n_epochs_no_update=patience, # hyperparameters (1)
-        lr=learning_rate, epochs=epochs,            # hyperparameters (2)
+        lr=learning_rate, epochs=epochs,             # hyperparameters (1)
+        tol=tolerance, n_epochs_no_update=patience,  # hyperparameters (2)
         validation=(X_val, t2_val)
     )
 

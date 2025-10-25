@@ -72,9 +72,11 @@ class NumpyLinRegClass(NumpyClassifier):
         if self.bias:
             X_train = add_bias(X_train, self.bias)
 
+        # (samples, features)
         (N, M) = X_train.shape
 
-        self.weights = weights = np.zeros(M)    # weights decided after, in case bias not added
+        # weights decided after, if bias not added: M=3 -> [0, 0, 0]
+        self.weights = weights = np.zeros(M)
 
         for epoch in range(epochs):
 
@@ -109,6 +111,7 @@ class NumpyLinRegClass(NumpyClassifier):
         # computes predictions
         ys = X @ self.weights
 
+        # turns prob. to "hard label" e.g. 0.6 -> 1
         return ys > threshold
 
 
@@ -146,7 +149,7 @@ def main():
     cl.fit(
         X_train=X_train, 
         t_train=t2_train,
-        lr=learning_rate, epochs=epochs
+        lr=learning_rate, epochs=epochs     # hyperparameters
     )
 
     predictions = cl.predict(X_val)             # predicting (unseen data)

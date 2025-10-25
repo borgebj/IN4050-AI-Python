@@ -30,13 +30,21 @@ def parse_args():
         "-tol", "--tolerance",
         type=float,
         default=1.0,
-        help="Tolerance for early stopping (default 1) (only used in logreg/ovr)"
+        help="Tolerance for early stopping (default 1) (only used in logreg/ovr/softmax/mlp)"
     )
     parser.add_argument(
         "-p", "--patience",
         type=int,
         default=10,
-        help="Epochs of no improvements before stop (default 10) (only used in logreg/ovr)"
+        help="Epochs of no improvements before stop (default 10) (only used in logreg/ovr/softmax/mlp)"
+    )
+
+    # mlp
+    parser.add_argument(
+        "-hd", "--hidden_dim",
+        type=int,
+        default=6,
+        help="Number of neurons in hidden layer (default 6) (only used in mlp)"
     )
 
     args = parser.parse_args()

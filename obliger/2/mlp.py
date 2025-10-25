@@ -1,6 +1,7 @@
 from linreg import standard, NumpyClassifier, add_bias, accuracy
-from plotter import plot_decision_regions
+from plotter import plot_decision_regions, plot_curves
 from utility import parse_args
+from logreg import bce
 import numpy as np
 
 
@@ -29,6 +30,11 @@ class MLPBinaryLinRegClass(NumpyClassifier):
         self.activ = logistic
         self.activ_diff = logistic_diff
 
+        # loss and accuracies
+        self.loss_train, self.loss_val = [], []
+        self.accuracies_train, self.accuracies_val = [], []
+
+        self._epochs_trained = 0
         self.verbose = verbose      # optional printing
 
 
@@ -50,7 +56,7 @@ class MLPBinaryLinRegClass(NumpyClassifier):
         return hidden_outs, outputs
 
 
-    def fit(self, X_train, t_train, lr=0.001, epochs=100):
+    def fit(self, X_train, t_train, lr=0.001, epochs=100, tol=0.0, n_epochs_no_update=5, validation=None):
         """Initialize the weights. Train *epochs* many epochs.
 
         X_train is a NxM matrix, N data points, M features
@@ -95,14 +101,18 @@ class MLPBinaryLinRegClass(NumpyClassifier):
         # adding bias column to data
         X_train_bias = add_bias(X_train, self.bias)
 
-        for e in range(epochs):
+        # keep track of lowest loss and epoch with improvements
+        lowest_val_loss = np.inf
+        epoch_no_improvement = 0
+
+        for epoch in range(epochs):
             # One epoch
 
             # The forward step:
-            hidden_outs, outputs = self.forward(X_train_bias)
+            hidden_outs, outputs = self.forward(X_train_bias)   # predictions (hidden and output)
 
             # The delta term on the output node:
-            out_deltas = (outputs - T_train)                    # Loss = (Y - T)
+            out_deltas = (outputs - T_train)                    # Loss = (Y - T) sigmoid + bce
 
             # The delta terms at the output of the hidden layer:
             hiddenout_diffs = out_deltas @ self.weights2.T
@@ -111,8 +121,54 @@ class MLPBinaryLinRegClass(NumpyClassifier):
             hiddenact_deltas = (hiddenout_diffs[:, 1:] * self.activ_diff(hidden_outs[:, 1:]))
 
             # Update the weights:
-            self.weights2 -= self.lr * hidden_outs.T @ out_deltas
-            self.weights1 -= self.lr * X_train_bias.T @ hiddenact_deltas
+            self.weights2 -= self.lr * (hidden_outs.T @ out_deltas)         # gradient 1
+            self.weights1 -= self.lr * (X_train_bias.T @ hiddenact_deltas)  # gradient 2
+
+
+            # if epoch % 100 == 0 or epoch == epochs-1:
+            # training loss
+            train_loss = bce(y_true=T_train, y_pred=outputs)
+            self.loss_train.append(float(train_loss))
+
+            # training accuracy
+            train_acc = accuracy(predicted=(outputs>0.5), gold=T_train)
+            self.accuracies_train.append(float(train_acc))
+
+
+            # loss and accuracy for validation data
+            if validation:
+                X_val, t_val = validation
+                X_val_bias = add_bias(X_val, self.bias)  # add bias
+                T_val = t_val.reshape(-1, 1)             # reshape
+                val_hidden_out, val_out = self.forward(X_val_bias)
+
+                # loss + accuracy calculation
+                val_loss = bce(y_true=T_val, y_pred=val_out)
+                val_acc = accuracy(predicted=(val_out>0.5), gold=T_val)
+                self.loss_val.append(float(val_loss))
+                self.accuracies_val.append(float(val_acc))
+
+                if tol is not None:
+                    if (lowest_val_loss - val_loss) > tol:
+                        lowest_val_loss = val_loss
+                        epoch_no_improvement = 0
+                    else:
+                        epoch_no_improvement += 1
+
+                # stopping early
+                if epoch_no_improvement >= n_epochs_no_update:
+                    if self.verbose: print(f"Epoch {epoch+1} - Loss: {val_loss:.4f}, Accuracy: {(val_acc*100):.2f}%\t(dev)")
+                    self._epochs_trained = epoch + 1
+                    break
+
+            # print occasionally
+            if (epoch+1) % max(1, epochs//5) == 0 or epoch == 0:
+                if self.verbose:
+                    if validation:
+                        print(f"Epoch {epoch+1:3} - Loss: {val_loss:.4f}, Accuarcy: {(val_acc*100):.2f}%\t(dev)")
+                    else:
+                        print(f"Epoch {epoch+1:3} - Loss: {train_loss:.4f}, Accuracy: {(train_acc*100):.2f}%\t(train)")
+
 
 
     def predict(self, X):
@@ -131,17 +187,16 @@ def main():
     print("="*40+"\n\n")
     # ---------------- 0. Command-line-args -------------
     args = parse_args()
-    learning_rate = args.learning_rate  # default: 0.1  (best: 1.0)
-    epochs = args.epochs                # default: 3    (best: ~100)
-    # tolerance = args.tolerance          # default 1.0   (best: 1.0)
-    # patience = args.patience            # default: 10   (best: 2)
+    learning_rate = args.learning_rate  # default: 0.1
+    epochs = args.epochs                # default: 3
+    tolerance = args.tolerance          # default: 1.0
+    patience = args.patience            # default: 10
+    hidden_dim = args.hidden_dim        # default: 6
     verbose = args.verbose              # default: False
     #  ---------------- ---------------- ----------------
 
 
     # ----------------- 1. normalization ----------------
-    # do axis=0 > column, due to per-feature
-    # we extract mean and std from TRAINING, ensuring others use same scale as trained on
     train_mean = X_train.mean(axis=0)
     train_std = X_train.std(axis=0)
 
@@ -161,16 +216,19 @@ def main():
     print(
         f"__Hyperparameters__\n" +
         f"- Learning:   [{learning_rate}]\n" +
-        f"- Epochs:     [{epochs}]\n" #+
-        # f"- Tolerance:  [{tolerance}]\n" +
-        # f"- Patience:   [{patience}]\n"
+        f"- Epochs:     [{epochs}]\n" +
+        f"- Tolerance:  [{tolerance}]\n" +
+        f"- Patience:   [{patience}]\n" +
+        f"- Hidden dim: [{hidden_dim}]\n"
     )
 
     # training   (seen data)
     cl.fit(
         X_train=X_train,
         t_train=t2_train,
-        lr=learning_rate, epochs=epochs,            # hyperparameters (1)
+        lr=learning_rate, epochs=epochs,             # hyperparameters (1)
+        tol=tolerance, n_epochs_no_update=patience,  # hyperparameters (2)
+        validation=(X_val, t2_val)
     )
 
     predictions = cl.predict(X_val)                 # predicting (unseen data)
@@ -179,6 +237,16 @@ def main():
 
 
     # ---------------- 3. Plotting ---------------- ----
+    # accuracy curve
+    acc_train = cl.accuracies_train
+    acc_val = cl.accuracies_val
+    plot_curves(res_train=acc_train, res_dev=acc_val, label="Accuracy")
+
+    # loss curve
+    loss_train = cl.loss_train
+    loss_val = cl.loss_val
+    plot_curves(res_train=loss_train, res_dev=loss_val, label="Loss")
+
     plot_decision_regions(X_train, t2_train, cl)
     # ---------------- ---------------- ----------------
     print("\n\n"+"="*40)
