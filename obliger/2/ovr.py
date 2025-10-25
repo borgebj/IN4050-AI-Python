@@ -1,6 +1,7 @@
-from utility import NumpyClassifier, accuracy, parse_args
-from logreg import NumpyLogRegClass, standard
+from linreg import NumpyClassifier, accuracy, standard
 from plotter import plot_decision_regions, plot_curves
+from logreg import NumpyLogRegClass
+from utility import parse_args
 import numpy as np
 
 
@@ -20,7 +21,7 @@ class NumpyOneVsRest(NumpyClassifier):
         self.verbose = verbose      # optional printing
 
 
-    def fit(self, X_train, t_train, tol=0.0, n_epochs_no_update=5, validation=None, lr=0.1, epochs=10):
+    def fit(self, X_train, t_train,lr=0.1, epochs=10, tol=0.0, n_epochs_no_update=5, validation=None):
         """
         X_train is a NxM matrix, N data points, M features
             - training data
@@ -102,10 +103,10 @@ def main():
     print("="*40+"\n\n")
     # ---------------- 0. Command-line-args -------------
     args = parse_args()
-    learning_rate = args.learning_rate  # default: 0.1  (best: 1.0)
-    epochs = args.epochs                # default: 3    (best: 1000)
-    tolerance = args.tolerance          # default 1.0   (best: 1.0)
-    patience = args.patience            # default: 10   (best: 885)
+    learning_rate = args.learning_rate  # default: 0.1
+    epochs = args.epochs                # default: 10
+    tolerance = args.tolerance          # default: 1.0
+    patience = args.patience            # default: 10
     verbose = args.verbose              # default: False
     #  ---------------- ---------------- ----------------
 
@@ -140,8 +141,8 @@ def main():
     # training (seen data)
     cl.fit(
         X_train=X_train, t_train=t_multi_train,
-        tol=tolerance, n_epochs_no_update=patience, # hyperparameters (1)
-        lr=learning_rate, epochs=epochs,            # hyperparameters (2)
+        lr=learning_rate, epochs=epochs,             # hyperparameters (1)
+        tol=tolerance, n_epochs_no_update=patience,  # hyperparameters (2)
         validation=(X_val, t_multi_val)
     )
 

@@ -1,15 +1,10 @@
-from utility import NumpyClassifier, add_bias, accuracy, parse_args
+from utility import parse_args
 from plotter import plot_curves, plot_decision_regions
+from linreg import NumpyClassifier, add_bias, accuracy, standard
 import numpy as np
 
 
 # ============== NEW FUNCTIONS ===================
-def standard(X, mean, std):
-    """Standard scaler aka Z-score
-    Usses passed mean and std (must use same as training!)"""
-    return (X - mean) / std
-
-
 def bce(y_true, y_pred):
     """BCE loss for binary classification"""
     # 1. sample formula:   -[ylog(p) + (1-y)log(1-p)]
@@ -20,9 +15,9 @@ def bce(y_true, y_pred):
     return -np.mean(y_true * np.log(y_pred + eps) + (1 - y_true) * np.log(1 - y_pred + eps))
 
 
-def sigmoid(y):
+def sigmoid(x):
     """Simple sigmoid for logreg using numpy"""
-    return 1 / (1 + np.exp(-y))
+    return 1 / (1 + np.exp(-x))
 
 # ================================================
 
@@ -165,10 +160,10 @@ def main():
     print("="*40+"\n\n")
     # ---------------- 0. Command-line-args -------------
     args = parse_args()
-    learning_rate = args.learning_rate  # default: 0.1  (best: 1.0)
-    epochs = args.epochs                # default: 3    (best: ~100)
-    tolerance = args.tolerance          # default 1.0   (best: 1.0)
-    patience = args.patience            # default: 10   (best: 2)
+    learning_rate = args.learning_rate  # default: 0.1
+    epochs = args.epochs                # default: 10
+    tolerance = args.tolerance          # default: 1.0
+    patience = args.patience            # default: 10
     verbose = args.verbose              # default: False
     #  ---------------- ---------------- ----------------
 
