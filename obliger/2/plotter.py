@@ -45,4 +45,5 @@ def plot_curves(res_train, res_dev, label, size=(8, 6)):
     plt.legend()
     plt.xlabel("Epochs")
     plt.ylabel(label)
+    plt.xscale("log")
     plt.show()

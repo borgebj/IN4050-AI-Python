@@ -1,3 +1,5 @@
+import time
+
 from linreg import standard, NumpyClassifier, add_bias, accuracy
 from plotter import plot_decision_regions, plot_curves
 from utility import parse_args
@@ -181,14 +183,21 @@ class MLPBinaryLinRegClass(NumpyClassifier):
         return (score > 0.5)
 
 
-def repeated_run(cl, train_data, eval_data, n_runs=10, **fit_args):
+def repeated_run(model_args, train_data, eval_data, n_runs=10, **fit_args):
+    """Repeatedly run 'n_runs' times and measure each.
+    Save best, standard deviation, and average."""
+    (dim_hidden, verbose) = model_args
     (X_train, t_train) = train_data
     (X_val, t_val) = eval_data
 
     best_acc = 0
     all_accuracies = []
+    best_cl = None
 
     for run in range(n_runs):
+        # new classifier each run
+        cl = MLPBinaryLinRegClass(dim_hidden=dim_hidden, verbose=verbose)
+
         # training   (seen data)
         cl.fit(X_train=X_train, t_train=t_train, **fit_args)    # training   (seen data)
         predictions = cl.predict(X_val)                         # predicting (unseen data)
@@ -197,10 +206,11 @@ def repeated_run(cl, train_data, eval_data, n_runs=10, **fit_args):
         all_accuracies.append(acc)
         if acc > best_acc:
             best_acc = acc
+            best_cl = cl
 
         print(f"Run {run + 1}/{n_runs}: accuracy = {acc:.4f}")
 
-    return best_acc, all_accuracies
+    return best_cl, best_acc, all_accuracies
 
 
 def main():
@@ -212,9 +222,9 @@ def main():
     epochs = args.epochs                # default: 3
     tolerance = args.tolerance          # default: 1.0
     patience = args.patience            # default: 10
-    hidden_dim = args.hidden_dim        # default: 6
+    dim_hidden = args.hidden_dim        # default: 6
     verbose = args.verbose              # default: False
-    #  ---------------- ---------------- ----------------
+    # ---------------------------------------------------
 
 
     # ----------------- 1. normalization ----------------
@@ -228,19 +238,17 @@ def main():
     # Normalizing validation data
     norm_val = standard(X_val, train_mean, train_std)
     X_val = norm_val
-    # ---------------- ---------------- ----------------
+    # --------------------------------------------------
 
 
-    # ---------------- 2. Regression ---------------- --
-    cl = MLPBinaryLinRegClass(dim_hidden=hidden_dim, verbose=verbose)
-
+    # ---------------- 2. Regression -------------------
     print(
         f"__Hyperparameters__\n" +
         f"- Learning:   [{learning_rate}]\n" +
         f"- Epochs:     [{epochs}]\n" +
         f"- Tolerance:  [{tolerance}]\n" +
         f"- Patience:   [{patience}]\n" +
-        f"- Hidden dim: [{hidden_dim}]\n"
+        f"- Hidden dim: [{dim_hidden}]\n"
     )
 
     # repeated run parameters
@@ -256,39 +264,42 @@ def main():
 
     # run (n_runs=10) times, get mean, std and best
     print("="*11+f" Starting {n_runs} runs "+"="*11)
-    best_acc, all_acc = repeated_run(
-        cl=cl,
-        n_runs=n_runs,
-        train_data=(X_train, t2_train),
-        eval_data=(X_val, t2_val),
-        **train_params
+    start = time.time()
+    cl, best_acc, all_acc = repeated_run(
+        model_args=(dim_hidden, verbose),   # passed to model initialization (verbose / dim_hidden)
+        n_runs=n_runs,                      # train and measure x times
+        train_data=(X_train, t2_train),     # training data
+        eval_data=(X_val, t2_val),          # evaluation
+        **train_params                      # lr, epochs, patience, tolerance
     )
+    end = (time.time() - start)
 
     # standard deviation and mean
     mean_acc = np.mean(all_acc)
     std_acc = np.std(all_acc)
 
     print("\n"+"-"*40)
+    print(f"Total runtime:   {end:.2f}s")
     print(f"Best accuracy:   {best_acc:.4f}")
     print(f"Mean accuracy:   {mean_acc:.4f}")
     print(f"Std deviation:   {std_acc:.4f}")
     print("-"*40)
-    # ---------------- ---------------- ----------------
+    # --------------------------------------------------
 
 
-    # ---------------- 3. Plotting ---------------- ----
+    # ---------------- 3. Plotting ---------------------
     # accuracy curve
     acc_train = cl.accuracies_train
     acc_val = cl.accuracies_val
-    # plot_curves(res_train=acc_train, res_dev=acc_val, label="Accuracy")
+    plot_curves(res_train=acc_train, res_dev=acc_val, label="Accuracy")
 
     # loss curve
     loss_train = cl.loss_train
     loss_val = cl.loss_val
-    # plot_curves(res_train=loss_train, res_dev=loss_val, label="Loss")
+    plot_curves(res_train=loss_train, res_dev=loss_val, label="Loss")
 
-    # plot_decision_regions(X_train, t2_train, cl)
-    # ---------------- ---------------- ----------------
+    plot_decision_regions(X_train, t2_train, cl)
+    # --------------------------------------------------
     print("\n"+"="*40)
 
 
