@@ -181,6 +181,27 @@ class MLPBinaryLinRegClass(NumpyClassifier):
         return (score > 0.5)
 
 
+def repeated_run(cl, train_data, eval_data, n_runs=10, **fit_args):
+    (X_train, t_train) = train_data
+    (X_val, t_val) = eval_data
+
+    best_acc = 0
+    all_accuracies = []
+
+    for run in range(n_runs):
+        # training   (seen data)
+        cl.fit(X_train=X_train, t_train=t_train, **fit_args)    # training   (seen data)
+        predictions = cl.predict(X_val)                         # predicting (unseen data)
+        acc = accuracy(predictions, t_val)
+
+        all_accuracies.append(acc)
+        if acc > best_acc:
+            best_acc = acc
+
+        print(f"Run {run + 1}/{n_runs}: accuracy = {acc:.4f}")
+
+    return best_acc, all_accuracies
+
 
 def main():
     from data import X_train, t2_train, X_val, t2_val
@@ -211,7 +232,7 @@ def main():
 
 
     # ---------------- 2. Regression ---------------- --
-    cl = MLPBinaryLinRegClass(verbose=verbose)
+    cl = MLPBinaryLinRegClass(dim_hidden=hidden_dim, verbose=verbose)
 
     print(
         f"__Hyperparameters__\n" +
@@ -222,17 +243,36 @@ def main():
         f"- Hidden dim: [{hidden_dim}]\n"
     )
 
-    # training   (seen data)
-    cl.fit(
-        X_train=X_train,
-        t_train=t2_train,
-        lr=learning_rate, epochs=epochs,             # hyperparameters (1)
-        tol=tolerance, n_epochs_no_update=patience,  # hyperparameters (2)
-        validation=(X_val, t2_val)
+    # repeated run parameters
+    n_runs = 10
+    train_params = {
+        "lr": learning_rate,
+        "epochs": epochs,
+        "tol": tolerance,
+        "n_epochs_no_update": patience,
+        "validation": (X_val, t2_val)
+    }
+
+
+    # run (n_runs=10) times, get mean, std and best
+    print("="*11+f" Starting {n_runs} runs "+"="*11)
+    best_acc, all_acc = repeated_run(
+        cl=cl,
+        n_runs=n_runs,
+        train_data=(X_train, t2_train),
+        eval_data=(X_val, t2_val),
+        **train_params
     )
 
-    predictions = cl.predict(X_val)                 # predicting (unseen data)
-    print("\nAccuracy on the validation set:", accuracy(predictions, t2_val))
+    # standard deviation and mean
+    mean_acc = np.mean(all_acc)
+    std_acc = np.std(all_acc)
+
+    print("\n"+"-"*40)
+    print(f"Best accuracy:   {best_acc:.4f}")
+    print(f"Mean accuracy:   {mean_acc:.4f}")
+    print(f"Std deviation:   {std_acc:.4f}")
+    print("-"*40)
     # ---------------- ---------------- ----------------
 
 
@@ -240,16 +280,16 @@ def main():
     # accuracy curve
     acc_train = cl.accuracies_train
     acc_val = cl.accuracies_val
-    plot_curves(res_train=acc_train, res_dev=acc_val, label="Accuracy")
+    # plot_curves(res_train=acc_train, res_dev=acc_val, label="Accuracy")
 
     # loss curve
     loss_train = cl.loss_train
     loss_val = cl.loss_val
-    plot_curves(res_train=loss_train, res_dev=loss_val, label="Loss")
+    # plot_curves(res_train=loss_train, res_dev=loss_val, label="Loss")
 
-    plot_decision_regions(X_train, t2_train, cl)
+    # plot_decision_regions(X_train, t2_train, cl)
     # ---------------- ---------------- ----------------
-    print("\n\n"+"="*40)
+    print("\n"+"="*40)
 
 
 if __name__ == "__main__":
