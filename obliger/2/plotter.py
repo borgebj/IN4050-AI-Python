@@ -33,17 +33,22 @@ def plot_decision_regions(X, t, clf=[], size=(8, 6)):
 
 
 # plotter for Loistic regression g)
-def plot_curves(res_train, res_dev, label, size=(8, 6)):
+def plot_curves(res_train, res_dev, label, log_x=False):
     """Plots curve for given result (loss / accuracy) in same figure as function of epochs"""
     
     epochs = range(len(res_train))
 
-    plt.figure(figsize=size)
+    plt.figure(figsize=(8, 6))
+
+    # optional scaling for x-axis (epochs)
+    if log_x:
+        plt.xscale("log")
+
     plt.plot(epochs, res_train, label = "Training")
     plt.plot(epochs, res_dev, label = "validation")
     plt.title(f"{label} over epochs")
     plt.legend()
     plt.xlabel("Epochs")
     plt.ylabel(label)
-    plt.xscale("log")
     plt.show()
+

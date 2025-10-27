@@ -291,12 +291,12 @@ def main():
     # accuracy curve
     acc_train = cl.accuracies_train
     acc_val = cl.accuracies_val
-    plot_curves(res_train=acc_train, res_dev=acc_val, label="Accuracy")
+    plot_curves(res_train=acc_train, res_dev=acc_val, label="Accuracy", log_x=True)
 
     # loss curve
     loss_train = cl.loss_train
     loss_val = cl.loss_val
-    plot_curves(res_train=loss_train, res_dev=loss_val, label="Loss")
+    plot_curves(res_train=loss_train, res_dev=loss_val, label="Loss", log_x=True)
 
     plot_decision_regions(X_train, t2_train, cl)
     # --------------------------------------------------
