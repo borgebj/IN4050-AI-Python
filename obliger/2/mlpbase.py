@@ -103,15 +103,16 @@ class MLP(NumpyClassifier):
 
             # training metrics
             train_loss = self.loss(T_train, outputs)
+            train_acc = self.accuracy(outputs, T_train)
 
-            if isinstance(self, MLPMultiClass):
-                # outputs.shape = (N,C) -> rows = samples, columns = class prob.
-                # t_train.shape = (N, ) -> each samples label as index
-                train_acc = self.accuracy(outputs, t_train) # pass outputs and raw labels
-            else:
-                # outputs.shape = (N,1) -> sigmoid output for each sample
-                # T_train.shape = (N,1) -> column vector of labels
-                train_acc = self.accuracy(outputs, T_train) # pass outputs and reshaped labels
+            # if isinstance(self, MLPMultiClass):
+            #     # outputs.shape = (N,C) -> rows = samples, columns = class prob.
+            #     # t_train.shape = (N, ) -> each samples label as index
+            #     train_acc = self.accuracy(outputs, t_train) # pass outputs and raw labels
+            # else:
+            #     # outputs.shape = (N,1) -> sigmoid output for each sample
+            #     # T_train.shape = (N,1) -> column vector of labels
+            #     train_acc = self.accuracy(outputs, T_train) # pass outputs and reshaped labels
 
             self.loss_train.append(float(train_loss))
             self.accuracies_train.append(float(train_acc))
@@ -125,11 +126,7 @@ class MLP(NumpyClassifier):
                 
                 # validation metrics
                 val_loss = self.loss(y_true=T_val, y_pred=val_out)
-
-                if isinstance(self, MLPMultiClass):
-                    val_acc = self.accuracy(val_out, t_val)
-                else:
-                    val_acc = self.accuracy(val_out, T_val)
+                val_acc = self.accuracy(val_out, T_val)
 
                 self.loss_val.append(float(val_loss))
                 self.accuracies_val.append(float(val_acc))
@@ -222,14 +219,21 @@ class MLPMultiClass(MLP):
         return (outputs - t_train)
     
     def accuracy(self, predicted, gold):
-        # argmax converts predicted.shape (N,C) to (N,) - 1D vector same as gold
+        # argmax converts predicted.shape (N,C) to (N,)
+        # must use argmax to unify both in shape
 
-        # if ndim == 1, then predicted = final output from predict()
+        # for multiclass:  gold may be one one-hot encoded (N,C)
+        # for binary:      gold may be column vector (N,1)
+        if gold.ndim > 1:
+            gold = np.argmax(gold, axis=1)
+
+        # for multiclass: predicted is softmax probs. (N,C)
+        # for binary:     predicted is sigmoid outputs (N,1) or (N,)
         if predicted.ndim > 1:
-            top_pred = np.argmax(predicted, axis=1)
-        else:
-            top_pred = predicted
-        return accuracy(predicted=top_pred, gold=gold)
+            predicted = np.argmax(predicted, axis=1)
+
+        # element-wise accuracy check
+        return accuracy(predicted=predicted, gold=gold)
     
     def predict(self, X):
         """Predict the class for the members of X"""
