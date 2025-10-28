@@ -46,6 +46,12 @@ def parse_args():
         default=6,
         help="Number of neurons in hidden layer (default 6) (only used in mlp)"
     )
+    parser.add_argument(
+        "-t", "--task",
+        type=str.lower,
+        default="binary",
+        help="Binary of multiclass MLP regression (only used in mlp)"
+    )
 
     args = parser.parse_args()
     return args

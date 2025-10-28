@@ -103,13 +103,11 @@ class NumpySoftmax(NumpyClassifier):
             # weight update using gradient
             weights -= lr * gradient
 
-            # training loss
+            # training metrics
             train_loss = cce(y_true=t_onehot, y_pred=prediction)
-            self.loss_train.append(float(train_loss))
-
-            # training accuracy
-            top_pred = np.argmax(prediction, axis=1)
+            top_pred = np.argmax(prediction, axis=1)  # gets class w/ highest probability 
             train_acc = accuracy(predicted=top_pred, gold=t_train)
+            self.loss_train.append(float(train_loss))
             self.accuracies_train.append(float(train_acc))
 
 
@@ -125,13 +123,11 @@ class NumpySoftmax(NumpyClassifier):
                 # validation prediction
                 pred_val = softmax(X_val @ weights)
 
-                # validation loss
+                # validation metrics
                 val_loss = cce(y_true=t_val_onehot, y_pred=pred_val)
-                self.loss_val.append(float(val_loss))
-
-                # validation accuracy
-                val_pred_classes = np.argmax(pred_val, axis=1)
+                val_pred_classes = np.argmax(pred_val, axis=1)  # gets class w/ highest probability
                 val_acc = accuracy(predicted=val_pred_classes, gold=t_val)
+                self.loss_val.append(float(val_loss))
                 self.accuracies_val.append(float(val_acc))
 
                 # measuring loss based on tolerance

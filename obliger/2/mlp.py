@@ -1,14 +1,14 @@
-import time
-
 from linreg import standard, NumpyClassifier, add_bias, accuracy
 from plotter import plot_decision_regions, plot_curves
 from utility import parse_args
 from logreg import bce
 import numpy as np
+import time
 
 
 # First, we define the logistic function and its derivative:
 def logistic(x):
+    x = np.clip(x, -50, 50)  # allows big numbers by limiting
     return 1 / (1 + np.exp(-x))
 
 
@@ -126,14 +126,10 @@ class MLPBinaryLinRegClass(NumpyClassifier):
             self.weights2 -= self.lr * (hidden_outs.T @ out_deltas)         # gradient 1
             self.weights1 -= self.lr * (X_train_bias.T @ hiddenact_deltas)  # gradient 2
 
-
-            # if epoch % 100 == 0 or epoch == epochs-1:
-            # training loss
+            # training metrics
             train_loss = bce(y_true=T_train, y_pred=outputs)
-            self.loss_train.append(float(train_loss))
-
-            # training accuracy
             train_acc = accuracy(predicted=(outputs>0.5), gold=T_train)
+            self.loss_train.append(float(train_loss))
             self.accuracies_train.append(float(train_acc))
 
 
@@ -144,7 +140,7 @@ class MLPBinaryLinRegClass(NumpyClassifier):
                 T_val = t_val.reshape(-1, 1)             # reshape
                 val_hidden_out, val_out = self.forward(X_val_bias)
 
-                # loss + accuracy calculation
+                # validation metrics
                 val_loss = bce(y_true=T_val, y_pred=val_out)
                 val_acc = accuracy(predicted=(val_out>0.5), gold=T_val)
                 self.loss_val.append(float(val_loss))
@@ -207,8 +203,9 @@ def repeated_run(model_args, train_data, eval_data, n_runs=10, **fit_args):
         if acc > best_acc:
             best_acc = acc
             best_cl = cl
-
-        print(f"Run {run + 1}/{n_runs}: accuracy = {acc:.4f}")
+        
+        width = len(str(n_runs))
+        print(f"Run {run + 1:{width}}/{n_runs:{width}}: accuracy = {acc:.4f}")
 
     return best_cl, best_acc, all_accuracies
 
