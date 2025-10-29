@@ -1,7 +1,7 @@
 from linreg import NumpyClassifier, accuracy, standard
 from plotter import plot_decision_regions, plot_curves
 from logreg import NumpyLogRegClass
-from utility import parse_args
+from argparser import parse_args
 import numpy as np
 
 

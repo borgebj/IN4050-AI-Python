@@ -1,12 +1,13 @@
 from linreg import standard, NumpyClassifier, add_bias, accuracy
 from plotter import plot_decision_regions, plot_curves
-from utility import parse_args
-from logreg import bce
+from argparser import parse_args
 import numpy as np
 import time
 
+from softmax import softmax, onehot, cce    # for multiclass
+from logreg import bce                      # for binary
 
-# First, we define the logistic function and its derivative:
+
 def logistic(x):
     x = np.clip(x, -50, 50)  # allows big numbers by limiting
     return 1 / (1 + np.exp(-x))
@@ -16,8 +17,8 @@ def logistic_diff(y):
     return y * (1 - y)
 
 
-class MLPBinaryLinRegClass(NumpyClassifier):
-    """A multi-layer neural network with one hidden layer"""
+class MLP(NumpyClassifier):
+    """Neural network base for use with binary and multi-class"""
 
     def __init__(self, bias=-1, dim_hidden=6,  verbose=False):
         """Initialize the hyperparameters"""
@@ -40,54 +41,7 @@ class MLPBinaryLinRegClass(NumpyClassifier):
         self.verbose = verbose      # optional printing
 
 
-    def forward(self, X):
-        """
-        Perform one forward step.
-        Return a pair consisting of the outputs of the hidden_layer
-        and the outputs on the final layer"""
-
-        Z_hidden = X @ self.weights1            # Z1 = XW1 (+b)
-        A_hidden = self.activ(Z_hidden)         # A2 = logistic(Z1)
-
-        hidden_outs = add_bias(
-            A_hidden, self.bias)                # each layer has its own bias
-
-        Z_out = hidden_outs @ self.weights2     # Z2 = XW2 (+b)
-        outputs = self.activ(Z_out)             # A2 = logistic(z1)
-
-        return hidden_outs, outputs
-
-
-    def fit(self, X_train, t_train, lr=0.001, epochs=100, tol=0.0, n_epochs_no_update=5, validation=None):
-        """Initialize the weights. Train *epochs* many epochs.
-
-        X_train is a NxM matrix, N data points, M features
-            - training data
-
-        t_train is a vector of length N,
-            - labels for data
-
-        lr is our learning rate
-            - how fast models learns
-
-        epochs
-            - over how many epochs the model trains
-
-        validation
-            - optional validation set for loss and accuracies(X_val, t_val)
-
-        the target class values for the training data
-        """
-        self.lr = lr
-
-        # Turn t_train into a column vector, a N*1 matrix:
-        T_train = t_train.reshape(-1, 1)
-
-        dim_in = X_train.shape[1]       # how many features (column)
-        dim_out = T_train.shape[1]      # how many output neurons
-
-        # ---------- Add weights for the layers ----------
-
+    def initialize_weights(self, dim_in, dim_out):
         # weights - (input to hidden)
         self.weights1 = (np.random.rand(
             dim_in + 1,
@@ -98,23 +52,52 @@ class MLPBinaryLinRegClass(NumpyClassifier):
             self.dim_hidden + 1,
             dim_out) * 2 - 1) / np.sqrt(self.dim_hidden)    # ~[ -0.408,  0.408 ] range for 6
 
-        # ---------- ---------------------- ----------
 
-        # adding bias column to data
+    def forward_hidden(self, X):
+        Z_hidden = X @ self.weights1            # Z1 = XW1 (+b)
+        A_hidden = self.activ(Z_hidden)         # A2 = logistic(Z1) - always sigmoid
+
+        hidden_outs = add_bias(
+            A_hidden, self.bias)                # bias for hidden layer
+
+        return hidden_outs
+
+
+    def forward(self, X):
+        hidden_outs = self.forward_hidden(X)
+        Z_out = hidden_outs @ self.weights2      # Z2 = XW2 (+b)
+        outputs = self.output_activation(Z_out)  # A2 = activ(Z2) - sigmoid / softmax
+
+        return hidden_outs, outputs
+
+
+    def fit(self, X_train, t_train, lr=0.001, epochs=100, tol=0.0, n_epochs_no_update=5, validation=None):
+        self.lr = lr
+
+        # Turn t_train into a column vector, a N*1 matrix:
+        T_train, dim_out = self.process_labels(t_train)
+
+        dim_in = X_train.shape[1]       # how many features (column)
+        dim_out = dim_out               # how many output neurons/classes
+
+        # initialize weights for each layer
+        self.initialize_weights(dim_in, dim_out)
+
+        # adding bias column to data (X)
         X_train_bias = add_bias(X_train, self.bias)
 
         # keep track of lowest loss and epoch with improvements
         lowest_val_loss = np.inf
-        epoch_no_improvement = 0
+        epochs_no_improvements = 0
 
         for epoch in range(epochs):
             # One epoch
 
             # The forward step:
-            hidden_outs, outputs = self.forward(X_train_bias)   # predictions (hidden and output)
+            hidden_outs, outputs = self.forward(X_train_bias)   # prediction (hidden and output)
 
             # The delta term on the output node:
-            out_deltas = (outputs - T_train)                    # Loss = (Y - T) sigmoid + bce
+            out_deltas = self.loss_diff(outputs, T_train)
 
             # The delta terms at the output of the hidden layer:
             hiddenout_diffs = out_deltas @ self.weights2.T
@@ -127,59 +110,150 @@ class MLPBinaryLinRegClass(NumpyClassifier):
             self.weights1 -= self.lr * (X_train_bias.T @ hiddenact_deltas)  # gradient 2
 
             # training metrics
-            train_loss = bce(y_true=T_train, y_pred=outputs)
-            train_acc = accuracy(predicted=(outputs>0.5), gold=T_train)
+            train_loss = self.loss(T_train, outputs)
+            train_acc = self.accuracy(outputs, T_train)
+
+            # outputs.shape:
+            # - binary     (N,1) -> prob. of positive class per sample  (sigmoid out)
+            # - multiclass (N,C) -> prob. per class per sample          (softmax out)
+
+            # T_train.shape:
+            # - binary     (N,1) -> column vector of labels
+            # - multiclass (N,C) -> one-hot encoded labels per sample
+
             self.loss_train.append(float(train_loss))
             self.accuracies_train.append(float(train_acc))
 
-
-            # loss and accuracy for validation data
+            # validation
             if validation:
                 X_val, t_val = validation
                 X_val_bias = add_bias(X_val, self.bias)  # add bias
-                T_val = t_val.reshape(-1, 1)             # reshape
-                val_hidden_out, val_out = self.forward(X_val_bias)
+                T_val, _ = self.process_labels(t_val)
+                _, val_out = self.forward(X_val_bias)
 
                 # validation metrics
-                val_loss = bce(y_true=T_val, y_pred=val_out)
-                val_acc = accuracy(predicted=(val_out>0.5), gold=T_val)
+                val_loss = self.loss(y_true=T_val, y_pred=val_out)
+                val_acc = self.accuracy(val_out, T_val)
+
                 self.loss_val.append(float(val_loss))
                 self.accuracies_val.append(float(val_acc))
 
                 if tol is not None:
                     if (lowest_val_loss - val_loss) > tol:
                         lowest_val_loss = val_loss
-                        epoch_no_improvement = 0
+                        epochs_no_improvements = 0
                     else:
-                        epoch_no_improvement += 1
+                        epochs_no_improvements += 1
 
-                # stopping early
-                if epoch_no_improvement >= n_epochs_no_update:
-                    if self.verbose: print(f"Epoch {epoch+1} - Loss: {val_loss:.4f}, Accuracy: {(val_acc*100):.2f}%\t(dev)")
+                # Early stopping
+                if epochs_no_improvements >= n_epochs_no_update:
                     self._epochs_trained = epoch + 1
                     break
 
-            # print occasionally
-            if (epoch+1) % max(1, epochs//5) == 0 or epoch == 0:
-                if self.verbose:
+            # print occasionally (verbose)
+            if self.verbose:
+                if (epoch+1) % max(1, epochs//5) == 0 or epoch == 0:
                     if validation:
                         print(f"Epoch {epoch+1:3} - Loss: {val_loss:.4f}, Accuarcy: {(val_acc*100):.2f}%\t(dev)")
                     else:
                         print(f"Epoch {epoch+1:3} - Loss: {train_loss:.4f}, Accuracy: {(train_acc*100):.2f}%\t(train)")
 
+    # implemented in respective binary/multiclass classes
+    def output_activation(self, x): raise NotImplementedError
+    def loss(self, y_true, y_pred): raise NotImplementedError
+    def loss_diff(self, outputs, T_train): raise NotImplementedError
+    def accuracy(self, predicted, gold): raise NotImplementedError
+    def process_labels(self, t_train): raise NotImplementedError
+    def predict(self, X): raise NotImplementedError
 
+
+class MLPBinary(MLP):
+    """Neural Network for binary regression"""
+
+    # Sigmoid as output activation
+    def output_activation(self, x):
+        return logistic(x)
+
+    # labels treated as column vector Nx1
+    def process_labels(self, t_train):
+        return t_train.reshape(-1, 1), 1
+
+    # Binary Cross Entropy for binary loss
+    def loss(self, y_true, y_pred):
+        return bce(y_true=y_true, y_pred=y_pred)
+
+    # Simplified derivative of Cross Entropy using sigmoid
+    def loss_diff(self, outputs, T_train):
+        return outputs - T_train
+
+    def accuracy(self, predicted, gold):
+        predicted = (predicted > 0.5)
+        return accuracy(predicted=predicted, gold=gold)
 
     def predict(self, X):
         """Predict the class for the members of X"""
         Z = add_bias(X, self.bias)
 
-        forw = self.forward(Z)[1]
+        forw = self.forward(Z)[1]  # [1] gets output layer results
         score = forw[:, 0]
 
         return (score > 0.5)
 
 
-def repeated_run(model_args, train_data, eval_data, n_runs=10, **fit_args):
+class MLPMultiClass(MLP):
+    """Neural Network for multiclass regression"""
+
+    def __init__(self, bias=-1, dim_hidden=6, verbose=False):
+        super().__init__(bias, dim_hidden, verbose)
+        self.classes = None
+
+    # Softmax as output activation
+    def output_activation(self, x):
+        return softmax(x)
+
+    # labels encoded using onehot   (from softmax.py)
+    def process_labels(self, t_train):
+        self.classes = np.unique(t_train)
+        return onehot(t_train, self.classes), len(self.classes)
+
+    # Categorical Cross Entropy for multiclass loss   (from softmax.py)
+    def loss(self, y_true, y_pred):
+        return cce(y_true=y_true, y_pred=y_pred)
+
+    # Simplified derivative of Cross Entropy using softmax  (same as bce+sigmoid!)
+    def loss_diff(self, outputs, t_train):
+        return outputs - t_train
+
+    def accuracy(self, predicted, gold):
+        # argmax converts predicted.shape (N,C) to (N,)
+        # must use argmax to unify both in shape
+
+        # for multiclass:  gold may be one one-hot encoded (N,C)
+        # for binary:      gold may be column vector (N,1)
+        if gold.ndim > 1:
+            gold = np.argmax(gold, axis=1)
+
+        # for multiclass: predicted is softmax probs. (N,C)
+        # for binary:     predicted is sigmoid outputs (N,1) or (N,)
+        if predicted.ndim > 1:
+            predicted = np.argmax(predicted, axis=1)
+
+        # element-wise accuracy check
+        return accuracy(predicted=predicted, gold=gold)
+
+    def predict(self, X):
+        """Predict the class for the members of X"""
+        Z = add_bias(X, self.bias)
+
+        outs = self.forward(Z)[1]  # [1] gets output layer results
+
+        pred_classes = np.argmax(outs,axis=1)
+
+        return pred_classes
+
+
+
+def repeated_run(model_args, train_data, eval_data, task, n_runs=10, **fit_args):
     """Repeatedly run 'n_runs' times and measure each.
     Save best, standard deviation, and average."""
     (dim_hidden, verbose) = model_args
@@ -191,19 +265,22 @@ def repeated_run(model_args, train_data, eval_data, n_runs=10, **fit_args):
     best_cl = None
 
     for run in range(n_runs):
-        # new classifier each run
-        cl = MLPBinaryLinRegClass(dim_hidden=dim_hidden, verbose=verbose)
+        # classifier based on arg.task
+        if task == "binary":
+            cl = MLPBinary(dim_hidden=dim_hidden, verbose=verbose)
+        elif task == "multiclass":
+            cl = MLPMultiClass(dim_hidden=dim_hidden, verbose=verbose)
 
         # training   (seen data)
         cl.fit(X_train=X_train, t_train=t_train, **fit_args)    # training   (seen data)
         predictions = cl.predict(X_val)                         # predicting (unseen data)
-        acc = accuracy(predictions, t_val)
+        acc = cl.accuracy(predictions, t_val)
 
         all_accuracies.append(acc)
         if acc > best_acc:
             best_acc = acc
             best_cl = cl
-        
+
         width = len(str(n_runs))
         print(f"Run {run + 1:{width}}/{n_runs:{width}}: accuracy = {acc:.4f}")
 
@@ -211,7 +288,11 @@ def repeated_run(model_args, train_data, eval_data, n_runs=10, **fit_args):
 
 
 def main():
-    from data import X_train, t2_train, X_val, t2_val
+    from data import (
+        X_train, X_val,             # input data
+        t2_train, t2_val,           # binary labels
+        t_multi_train, t_multi_val  # multiclass labels
+    )
     print("="*40+"\n\n")
     # ---------------- 0. Command-line-args -------------
     args = parse_args()
@@ -220,6 +301,7 @@ def main():
     tolerance = args.tolerance          # default: 1.0
     patience = args.patience            # default: 10
     dim_hidden = args.hidden_dim        # default: 6
+    task = args.task                    # default: binary
     verbose = args.verbose              # default: False
     # ---------------------------------------------------
 
@@ -239,13 +321,21 @@ def main():
 
 
     # ---------------- 2. Regression -------------------
+
+    # choose task
+    if task == "binary":
+        t_train, t_val = t2_train, t2_val
+    elif task == "multiclass":
+        t_train, t_val = t_multi_train, t_multi_val
+
     print(
         f"__Hyperparameters__\n" +
         f"- Learning:   [{learning_rate}]\n" +
         f"- Epochs:     [{epochs}]\n" +
         f"- Tolerance:  [{tolerance}]\n" +
         f"- Patience:   [{patience}]\n" +
-        f"- Hidden dim: [{dim_hidden}]\n"
+        f"- Hidden dim: [{dim_hidden}]\n" +
+        f"- Task:       [{task}]\n"
     )
 
     # repeated run parameters
@@ -255,7 +345,7 @@ def main():
         "epochs": epochs,
         "tol": tolerance,
         "n_epochs_no_update": patience,
-        "validation": (X_val, t2_val)
+        "validation": (X_val, t_val)
     }
 
 
@@ -264,9 +354,10 @@ def main():
     start = time.time()
     cl, best_acc, all_acc = repeated_run(
         model_args=(dim_hidden, verbose),   # passed to model initialization (verbose / dim_hidden)
+        task=task,                          # either Binary of Multiclass regression
         n_runs=n_runs,                      # train and measure x times
-        train_data=(X_train, t2_train),     # training data
-        eval_data=(X_val, t2_val),          # evaluation
+        train_data=(X_train, t_train),      # training data
+        eval_data=(X_val, t_val),          # evaluation
         **train_params                      # lr, epochs, patience, tolerance
     )
     end = (time.time() - start)
@@ -295,7 +386,7 @@ def main():
     loss_val = cl.loss_val
     plot_curves(res_train=loss_train, res_dev=loss_val, label="Loss", log_x=True)
 
-    plot_decision_regions(X_train, t2_train, cl)
+    plot_decision_regions(X_train, t_train, cl)
     # --------------------------------------------------
     print("\n"+"="*40)
 

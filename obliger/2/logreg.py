@@ -1,4 +1,4 @@
-from utility import parse_args
+from argparser import parse_args
 from plotter import plot_curves, plot_decision_regions
 from linreg import NumpyClassifier, add_bias, accuracy, standard
 import numpy as np
