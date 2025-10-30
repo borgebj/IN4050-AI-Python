@@ -137,23 +137,22 @@ def main():
 
     # Normalizing test data
     norm_train = standard(X_train, train_mean, train_std)
-    # X_train = norm_train
+    X_train = norm_train
 
     # Normalizing validation data
     norm_val = standard(X_val, train_mean, train_std)
-    # X_val = norm_val
-    # --------------------------------------------------
+    X_val = norm_val
 
     # Normalizing testing data
     norm_test = standard(X_test, train_mean, train_std)
-    # X_test = norm_test
+    X_test = norm_test
     # --------------------------------------------------
 
 
     # ---------------- 2. Regression ---------------- --
     cl = NumpyLinRegClass(verbose=verbose)
 
-    # choose validation tset
+    # choose validation set
     if eval_set == "train":
         X_eval, t_eval = X_train, t2_train
     elif eval_set == "validation":

@@ -81,7 +81,7 @@ class NumpyLogRegClass(NumpyClassifier):
 
             # gradient (sigmoid derivative w/ bce)
             error = (prediction - t_train)       # L = (Y - T)
-            gradient = (X_train.T @ error) / N  # gradient avg. over samples
+            gradient = (X_train.T @ error) / N   # gradient avg. over samples
 
             # weight update using gradient
             weights -= lr * gradient
@@ -115,7 +115,11 @@ class NumpyLogRegClass(NumpyClassifier):
 
                 # stopping early (tol and n_epochs)
                 if epoch_no_improvement >= n_epochs_no_update:
-                    if self.verbose: print(f"Epoch {epoch+1:3} - Loss: {val_loss:.4f}, Accuracy: {(val_acc*100):.2f}%\t(dev)")
+                    if self.verbose:
+                        print(
+                            f"Epoch {epoch+1:3} - "
+                            f"Loss: {val_loss:.4f}, "
+                            f"Accuracy: {val_acc:.3f} (dev) {train_acc:.3f} (train)")
                     self._epochs_trained = epoch + 1
                     break
 
@@ -124,9 +128,14 @@ class NumpyLogRegClass(NumpyClassifier):
             if self.verbose:
                 if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
                     if validation:
-                        print(f"Epoch {epoch+1:3} - Loss: {val_loss:.4f}, Accuarcy: {(val_acc*100):.2f}%\t(dev)")
+                        print(
+                            f"Epoch {epoch+1:3} - "
+                            f"Loss: {val_loss:.4f}, "
+                            f"Accuarcy: {val_acc:.3f} (dev) {train_acc:.3f} (train)")
                     else:
-                        print(f"Epoch {epoch+1:3} - Loss: {train_loss:.4f}, Accuracy: {(train_acc*100):.2f}%\t(train)")
+                        print(f"Epoch {epoch+1:3} - "
+                              f"Loss: {train_loss:.4f}, "
+                              f"Accuracy: {train_acc:.3f} (train)")
 
 
     def predict(self, X, threshold=0.5):
@@ -155,7 +164,11 @@ class NumpyLogRegClass(NumpyClassifier):
 
 
 def main():
-    from data import X_train, t2_train, X_val, t2_val
+    from data import (
+        X_train, t2_train,  # train data
+        X_val, t2_val,      # validation data
+        X_test, t2_test     # test data
+    )
     print("="*40+"\n\n")
     # ---------------- 0. Command-line-args -------------
     args = parse_args()
@@ -164,6 +177,7 @@ def main():
     tolerance = args.tolerance          # default: 1.0
     patience = args.patience            # default: 10
     verbose = args.verbose              # default: False
+    eval_set = args.eval_set            # default: validation
     #  ---------------- ---------------- ----------------
 
 
@@ -178,19 +192,32 @@ def main():
     # Normalizing validation data
     norm_val = standard(X_val, train_mean, train_std)
     X_val = norm_val
+
+    # Normalizing testing data
+    norm_test = standard(X_test, train_mean, train_std)
+    X_test = norm_test
     # ---------------- ---------------- ----------------
 
 
     # ---------------- 2. Regression ---------------- --
     cl = NumpyLogRegClass(verbose=verbose)
 
+    # choose validation set
+    if eval_set == "train":
+        X_eval, t_eval = X_train, t2_train
+    elif eval_set == "validation":
+        X_eval, t_eval = X_val, t2_val
+    elif eval_set == "test":
+        X_eval, t_eval = X_test, t2_test
 
     print(
         f"__Hyperparameters__\n" +
         f"- Learning:   [{learning_rate}]\n" +
         f"- Epochs:     [{epochs}]\n" +
         f"- Tolerance:  [{tolerance}]\n" +
-        f"- Patience:   [{patience}]\n"
+        f"- Patience:   [{patience}]\n" +
+        f"\n________Info________\n" +
+        f"- Evaluation: [{eval_set}]\n\n"
     )
 
     # training   (seen data)
@@ -199,11 +226,11 @@ def main():
         t_train=t2_train,
         lr=learning_rate, epochs=epochs,             # hyperparameters (1)
         tol=tolerance, n_epochs_no_update=patience,  # hyperparameters (2)
-        validation=(X_val, t2_val)
+        validation=(X_eval, t_eval)
     )
 
-    predictions = cl.predict(X_val)                 # predicting (unseen data)
-    print("\nAccuracy on the validation set:", accuracy(predictions, t2_val))
+    predictions = cl.predict(X_eval)                 # predicting (unseen data)
+    print("\nAccuracy on the validation set:", accuracy(predictions, t_eval))
     # ---------------- ---------------- ---------------- 
 
 
