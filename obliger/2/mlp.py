@@ -311,20 +311,19 @@ def main():
     # ---------------------------------------------------
 
 
-    # ----------------- 2. evaluation set ----------------
-    (X_eval, t_eval) = select_eval(X_train, t2_train, X_val, t2_val, X_test, t2_test, eval_set)
-    # ----------------------------------------------------
 
-
-    # ---------------- 3. Regression -------------------
-    # choose task
+    # ----------------- 2. Select task labels ----------------
     if task == "binary":
         t_train, t_val, t_test = t2_train, t2_val, t2_test
     elif task == "multiclass":
         t_train, t_val, t_test = t_multi_train, t_multi_val, t_multi_test
 
-
+    # ----------------- 3. Select evaluation set --------------
+    X_eval, t_eval = select_eval(X_train, t_train, X_val, t_val, X_test, t_test, eval_set)
     eval_set = eval_set.replace("_", " ")
+    # ----------------------------------------------------------
+
+    # ---------------- 4. Regression -------------------
     print(
         f"___Hyperparameters___\n" +
         f"- Learning:   [{learning_rate}]\n" +
@@ -362,11 +361,11 @@ def main():
 
     prec, rec = precision_recall(cl.predict(X_eval), t_eval)
     print("\n"+"-"*40 + "\n"+
-          f"Total runtime:   {end:.2f}\ns"
+          f"Total runtime:   {end:.2f}s\n"
           f"Best accuracy:   {acc:.4f}\n"
           f"Mean accuracy:   {mean:.4f}\n"
           f"Std deviation:   {std:.4f}\n"+
-          "-"*40+"\n",
+          "-"*40+"\n"+
           f"Precision (class 1): {prec:.3f}\n"
           f"Recall    (class 1): {rec:.3f}\n"+
           "-"*40)

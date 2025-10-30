@@ -56,7 +56,6 @@ def cce(y_true, y_pred):
 
 # ============== ACTIVATION ===================
 def logistic(x):
-    """Simple sigmoid for logreg using numpy"""
     return 1 / (1 + np.exp(-x))
 
 
