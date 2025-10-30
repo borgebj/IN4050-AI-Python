@@ -1,25 +1,7 @@
-from argparser import parse_args
+from utility import normalize_data, select_eval, mse, precision_recall, accuracy
 from plotter import plot_decision_regions
+from argparser import parse_args
 import numpy as np
-
-
-# ============== NEW FUNCTIONS ===================
-def standard(X, mean, std):
-    """Standard scaler aka Z-score
-    Uses passed mean and std (must use same as training!)"""
-    return (X - mean) / std
-
-
-def mse(y_true, y_pred):
-    """MSE loss to present losses across epochs
-    Step 1-2 includes loss for single sample"""
-    # 1. calculates error (y - p)
-    # 2. squares errors ^2
-    # 3. sums errors        (numpy internal)
-    # 4. averages           (numpy internal)
-    return np.mean((y_true - y_pred) ** 2)
-
-# ================================================
 
 
 def add_bias(X, bias):
@@ -35,11 +17,6 @@ def add_bias(X, bias):
     biases = np.ones((N, 1)) * bias  # Make an N*1 matrix of biases
     # Concatenate the column of biases in front of the columns of X.
     return np.concatenate((biases, X), axis=1)
-
-
-def accuracy(predicted, gold):
-    """Compares predicted to actual (gold)"""
-    return np.mean(predicted == gold)
 
 
 class NumpyClassifier:
@@ -99,7 +76,9 @@ class NumpyLinRegClass(NumpyClassifier):
             # print occasionally
             if self.verbose:
                 if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
-                    print(f"Epoch {epoch+1:3} - Loss: {loss:.4f}, Accuracy: {acc:.3f}\t(train)")
+                    print(f"Epoch {epoch+1:3} - "
+                          f"Loss: {loss:.4f}, "
+                          f"Accuracy: {acc:.3f} (train)")
 
 
     def predict(self, X, threshold=0.5):
@@ -113,6 +92,9 @@ class NumpyLinRegClass(NumpyClassifier):
 
         # turns prob. to "hard label" e.g. 0.6 -> 1
         return ys > threshold
+
+
+
 
 
 def main():
@@ -132,40 +114,23 @@ def main():
 
 
     # ----------------- 1. normalization ----------------
-    train_mean = X_train.mean(axis=0)
-    train_std = X_train.std(axis=0)
-
-    # Normalizing test data
-    norm_train = standard(X_train, train_mean, train_std)
-    X_train = norm_train
-
-    # Normalizing validation data
-    norm_val = standard(X_val, train_mean, train_std)
-    X_val = norm_val
-
-    # Normalizing testing data
-    norm_test = standard(X_test, train_mean, train_std)
-    X_test = norm_test
+    X_train, X_val, X_test = normalize_data(X_train, X_val, X_test)
     # --------------------------------------------------
 
+    # ----------------- 2. evaluation set ----------------
+    (X_eval, t_eval) = select_eval(X_train, t2_train, X_val, t2_val, X_test, t2_test, eval_set)
+    # ----------------------------------------------------
 
-    # ---------------- 2. Regression ---------------- --
+
+    # ---------------- 3. Regression -------------------
     cl = NumpyLinRegClass(verbose=verbose)
 
-    # choose validation set
-    if eval_set == "train":
-        X_eval, t_eval = X_train, t2_train
-    elif eval_set == "validation":
-        X_eval, t_eval = X_val, t2_val
-    elif eval_set == "test":
-        X_eval, t_eval = X_test, t2_test
-
     print(
-        f"__Hyperparameters__\n" +
+        f"___Hyperparameters___\n" +
         f"- Learning:   [{learning_rate}]\n" +
         f"- Epochs:     [{epochs}]\n" +
         f"\n________Info________\n" +
-        f"- Evaluation: [{eval_set}]\n"
+        f"- Evaluation: [{eval_set}]\n\n"
     )
 
     # training (seen data)
@@ -177,13 +142,20 @@ def main():
 
     # predicting - using optional eval data
     predictions = cl.predict(X_eval)
-    print("\nAccuracy on the validation set:", accuracy(predictions, t_eval))
-    # ---------------- ---------------- ----------------
+    acc = accuracy(predictions, t_eval)
+    prec, rec = precision_recall(predictions, t_eval)
+    print(
+          f"\n____On validation set____\n"
+          f"Accuracy:            {acc:.3f}\n"
+          f"Precision (class 1): {prec:.3f}\n"
+          f"Recall    (class 1): {rec:.3f}"
+    )
+    # --------------------------------------------------
 
 
-    # ---------------- 3. Plotting ---------------- ----
+    # ---------------- 3. Plotting ---------------------
     plot_decision_regions(X_train, t2_train, cl)
-    # ---------------- ---------------- ----------------
+    # --------------------------------------------------
     print("\n\n"+"="*40)
 
 

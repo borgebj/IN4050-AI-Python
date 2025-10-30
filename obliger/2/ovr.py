@@ -1,6 +1,7 @@
-from linreg import NumpyClassifier, accuracy, standard
-from plotter import plot_decision_regions, plot_curves
+from utility import normalize_data, select_eval, accuracy
+from plotter import plot_decision_regions
 from logreg import NumpyLogRegClass
+from linreg import NumpyClassifier
 from argparser import parse_args
 import numpy as np
 
@@ -92,7 +93,11 @@ class NumpyOneVsRest(NumpyClassifier):
 
 
 def main():
-    from data import X_train, t_multi_train, X_val, t_multi_val
+    from data import (
+        X_train, t_multi_train,  # train data
+        X_val, t_multi_val,      # validation data
+        X_test, t_multi_test     # test data
+    )
     print("="*40+"\n\n")
     # ---------------- 0. Command-line-args -------------
     args = parse_args()
@@ -101,32 +106,31 @@ def main():
     tolerance = args.tolerance          # default: 1.0
     patience = args.patience            # default: 10
     verbose = args.verbose              # default: False
-    #  ---------------- ---------------- ----------------
+    eval_set = args.eval_set            # default: validation
+    #  --------------------------------------------------
 
 
     # ----------------- 1. normalization ----------------
-    train_mean = X_train.mean(axis=0)
-    train_std = X_train.std(axis=0)
-
-    # Normalizing test data
-    norm_train = standard(X_train, train_mean, train_std)
-    X_train = norm_train
-
-    # Normalizing validation data
-    norm_val = standard(X_val, train_mean, train_std)
-    X_val = norm_val
-    # ---------------- ---------------- ----------------
+    X_train, X_val, X_test = normalize_data(X_train, X_val, X_test)
+    # ---------------------------------------------------
 
 
-    # ---------------- 2. Regression ---------------- --
+    # ----------------- 2. evaluation set ----------------
+    (X_eval, t_eval) = select_eval(X_train, t_multi_train, X_val, t_multi_val, X_test, t_multi_test, eval_set)
+    # ----------------------------------------------------
+
+
+    # ---------------- 3. Regression -------------------
     cl = NumpyOneVsRest(verbose=verbose)
 
     print(
-        f"__Hyperparameters__\n" +
-        f"- Learning:   [{learning_rate}]\n" +
-        f"- Epochs:     [{epochs}]\n" +
-        f"- Tolerance:  [{tolerance}]\n" +
+        f"___Hyperparameters___\n"
+        f"- Learning:   [{learning_rate}]\n"
+        f"- Epochs:     [{epochs}]\n"
+        f"- Tolerance:  [{tolerance}]\n"
         f"- Patience:   [{patience}]\n"
+        f"\n________Info________\n"
+        f"- Evaluation: [{eval_set}]\n\n"
     )
 
     # training (seen data)
@@ -134,17 +138,17 @@ def main():
         X_train=X_train, t_train=t_multi_train,
         lr=learning_rate, epochs=epochs,             # hyperparameters (1)
         tol=tolerance, n_epochs_no_update=patience,  # hyperparameters (2)
-        validation=(X_val, t_multi_val)
+        validation=(X_eval, t_eval)
     )
 
-    predictions = cl.predict(X_val)                 # predicting (unseen data)
-    print("\nAccuracy on the validation set:", accuracy(predictions, t_multi_val))
-    # ---------------- ---------------- ----------------
+    predictions = cl.predict(X_eval)                 # predicting (unseen data)
+    print("\nAccuracy on the validation set:", accuracy(predictions, t_eval))
+    # --------------------------------------------------
 
 
-    # ---------------- 3. Plotting ---------------- ----
+    # ---------------- 3. Plotting ---------------------
     plot_decision_regions(X_train, t_multi_train, cl)
-    # ---------------- ---------------- ----------------
+    # --------------------------------------------------
     print("\n\n"+"="*40)
 
 

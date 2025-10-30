@@ -1,20 +1,12 @@
-from linreg import standard, NumpyClassifier, add_bias, accuracy
+from utility import normalize_data, select_eval, logistic, logistic_diff, accuracy, precision_recall
 from plotter import plot_decision_regions, plot_curves
+from linreg import NumpyClassifier, add_bias
 from argparser import parse_args
 import numpy as np
 import time
 
 from softmax import softmax, onehot, cce    # for multiclass
 from logreg import bce                      # for binary
-
-
-def logistic(x):
-    x = np.clip(x, -50, 50)  # allows big numbers by limiting
-    return 1 / (1 + np.exp(-x))
-
-
-def logistic_diff(y):
-    return y * (1 - y)
 
 
 class MLP(NumpyClassifier):
@@ -315,38 +307,22 @@ def main():
 
 
     # ----------------- 1. normalization ----------------
-    train_mean = X_train.mean(axis=0)
-    train_std = X_train.std(axis=0)
-
-    # Normalizing test data
-    norm_train = standard(X_train, train_mean, train_std)
-    X_train = norm_train
-
-    # Normalizing validation data
-    norm_val = standard(X_val, train_mean, train_std)
-    X_val = norm_val
-
-    # Normalizing testing data
-    norm_test = standard(X_test, train_mean, train_std)
-    X_test = norm_test
-    # --------------------------------------------------
+    X_train, X_val, X_test = normalize_data(X_train, X_val, X_test)
+    # ---------------------------------------------------
 
 
-    # ---------------- 2. Regression -------------------
+    # ----------------- 2. evaluation set ----------------
+    (X_eval, t_eval) = select_eval(X_train, t2_train, X_val, t2_val, X_test, t2_test, eval_set)
+    # ----------------------------------------------------
 
+
+    # ---------------- 3. Regression -------------------
     # choose task
     if task == "binary":
         t_train, t_val, t_test = t2_train, t2_val, t2_test
     elif task == "multiclass":
         t_train, t_val, t_test = t_multi_train, t_multi_val, t_multi_test
 
-    # choose validation tset
-    if eval_set == "train":
-        eval_data = (X_train, t_train)
-    elif eval_set == "validation":
-        eval_data = (X_val, t_val)
-    elif eval_set == "test":
-        eval_data = (X_test, t_test)
 
     eval_set = eval_set.replace("_", " ")
     print(
@@ -379,17 +355,21 @@ def main():
         task=task,                           # either Binary of Multiclass regression
         n_runs=n_runs,                       # train and measure x times
         train_data=(X_train, t_train),  # training data
-        eval_data=eval_data,                 # evaluation
+        eval_data=(X_eval, t_eval),                 # evaluation
         **train_params                       # lr, epochs, patience, tolerance
     )
     end = (time.time() - start)
 
-    print("\n"+"-"*40)
-    print(f"Total runtime:   {end:.2f}s")
-    print(f"Best accuracy:   {acc:.4f}")
-    print(f"Mean accuracy:   {mean:.4f}")
-    print(f"Std deviation:   {std:.4f}")
-    print("-"*40)
+    prec, rec = precision_recall(cl.predict(X_eval), t_eval)
+    print("\n"+"-"*40 + "\n"+
+          f"Total runtime:   {end:.2f}\ns"
+          f"Best accuracy:   {acc:.4f}\n"
+          f"Mean accuracy:   {mean:.4f}\n"
+          f"Std deviation:   {std:.4f}\n"+
+          "-"*40+"\n",
+          f"Precision (class 1): {prec:.3f}\n"
+          f"Recall    (class 1): {rec:.3f}\n"+
+          "-"*40)
     # --------------------------------------------------
 
 

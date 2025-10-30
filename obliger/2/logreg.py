@@ -1,25 +1,8 @@
-from argparser import parse_args
+from utility import logistic, bce, select_eval, normalize_data, accuracy, precision_recall
 from plotter import plot_curves, plot_decision_regions
-from linreg import NumpyClassifier, add_bias, accuracy, standard
+from linreg import NumpyClassifier, add_bias
+from argparser import parse_args
 import numpy as np
-
-
-# ============== NEW FUNCTIONS ===================
-def bce(y_true, y_pred):
-    """BCE loss for binary classification"""
-    # 1. sample formula:   -[ylog(p) + (1-y)log(1-p)]
-    # 2. sum over samples
-    # 3. avg. sum for mean loss
-    # eps is a tiny value added to counter division by zero
-    eps = 1e-8
-    return -np.mean(y_true * np.log(y_pred + eps) + (1 - y_true) * np.log(1 - y_pred + eps))
-
-
-def sigmoid(x):
-    """Simple sigmoid for logreg using numpy"""
-    return 1 / (1 + np.exp(-x))
-
-# ================================================
 
 
 class NumpyLogRegClass(NumpyClassifier):
@@ -77,7 +60,7 @@ class NumpyLogRegClass(NumpyClassifier):
 
             # forward pass
             Z = X_train @ weights                # Z = XW
-            prediction = sigmoid(Z)              # A = sigmoid(Z)
+            prediction = logistic(Z)             # A = sigmoid(Z)
 
             # gradient (sigmoid derivative w/ bce)
             error = (prediction - t_train)       # L = (Y - T)
@@ -97,7 +80,7 @@ class NumpyLogRegClass(NumpyClassifier):
 
             # loss and accuracy for validation data
             if validation:
-                pred_val = sigmoid(X_val @ weights)
+                pred_val = logistic(X_val @ weights)
 
                 # loss + accuracy calculation
                 val_loss = bce(y_true=t_val, y_pred=pred_val)
@@ -149,7 +132,7 @@ class NumpyLogRegClass(NumpyClassifier):
         ys = X @ self.weights
 
         # compute logistic function (sigmoid)
-        ys = sigmoid(ys)
+        ys = logistic(ys)
 
         # modified to allow probabilities AND classes
         if threshold is not None:
@@ -178,40 +161,24 @@ def main():
     patience = args.patience            # default: 10
     verbose = args.verbose              # default: False
     eval_set = args.eval_set            # default: validation
-    #  ---------------- ---------------- ----------------
+    #  --------------------------------------------------
 
 
     # ----------------- 1. normalization ----------------
-    train_mean = X_train.mean(axis=0)
-    train_std = X_train.std(axis=0)
-
-    # Normalizing test data
-    norm_train = standard(X_train, train_mean, train_std)
-    X_train = norm_train
-
-    # Normalizing validation data
-    norm_val = standard(X_val, train_mean, train_std)
-    X_val = norm_val
-
-    # Normalizing testing data
-    norm_test = standard(X_test, train_mean, train_std)
-    X_test = norm_test
-    # ---------------- ---------------- ----------------
+    X_train, X_val, X_test = normalize_data(X_train, X_val, X_test)
+    # ---------------------------------------------------
 
 
-    # ---------------- 2. Regression ---------------- --
+    # ----------------- 2. evaluation set ----------------
+    (X_eval, t_eval) = select_eval(X_train, t2_train, X_val, t2_val, X_test, t2_test, eval_set)
+    # ----------------------------------------------------
+
+
+    # ---------------- 3. Regression -------------------
     cl = NumpyLogRegClass(verbose=verbose)
 
-    # choose validation set
-    if eval_set == "train":
-        X_eval, t_eval = X_train, t2_train
-    elif eval_set == "validation":
-        X_eval, t_eval = X_val, t2_val
-    elif eval_set == "test":
-        X_eval, t_eval = X_test, t2_test
-
     print(
-        f"__Hyperparameters__\n" +
+        f"___Hyperparameters___\n" +
         f"- Learning:   [{learning_rate}]\n" +
         f"- Epochs:     [{epochs}]\n" +
         f"- Tolerance:  [{tolerance}]\n" +
@@ -229,12 +196,20 @@ def main():
         validation=(X_eval, t_eval)
     )
 
-    predictions = cl.predict(X_eval)                 # predicting (unseen data)
-    print("\nAccuracy on the validation set:", accuracy(predictions, t_eval))
-    # ---------------- ---------------- ---------------- 
+    # predicting - using optional eval data
+    predictions = cl.predict(X_eval)
+    acc = accuracy(predictions, t_eval)
+    prec, rec = precision_recall(predictions, t_eval)
+    print(
+          f"\n____On validation set____\n"
+          f"Accuracy:            {acc:.3f}\n"
+          f"Precision (class 1): {prec:.3f}\n"
+          f"Recall    (class 1): {rec:.3f}"
+    )
+    # --------------------------------------------------
 
 
-    # ---------------- 3. Plotting ---------------- ----
+    # ---------------- 3. Plotting ---------------------
     # accuracy curve
     acc_train = cl.accuracies_train
     acc_val = cl.accuracies_val
@@ -246,7 +221,7 @@ def main():
     plot_curves(res_train=loss_train, res_dev=loss_val, label="Loss")
 
     plot_decision_regions(X_train, t2_train, cl)
-    # ---------------- ---------------- ---------------- 
+    # --------------------------------------------------
     print("\n\n"+"="*40)
 
 
