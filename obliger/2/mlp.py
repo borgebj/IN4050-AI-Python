@@ -357,7 +357,7 @@ def main():
         task=task,                          # either Binary of Multiclass regression
         n_runs=n_runs,                      # train and measure x times
         train_data=(X_train, t_train),      # training data
-        eval_data=(X_val, t_val),          # evaluation
+        eval_data=(X_val, t_val),           # evaluation
         **train_params                      # lr, epochs, patience, tolerance
     )
     end = (time.time() - start)
