@@ -37,6 +37,12 @@ def parse_args():
         default=10,
         help="Epochs of no improvements before stop (default 10) (logreg/ovr/softmax/mlp)"
     )
+    parser.add_argument(
+        "--eval_set",
+        choices=["train", "validation", "test"],
+        default="validation",
+        help="Which dataset to evaluate the model on after training"
+    )
 
     # mlp
     parser.add_argument(
@@ -46,7 +52,7 @@ def parse_args():
         help="Number of neurons in hidden layer (default 6) (mlp)"
     )
     parser.add_argument(
-        "-t", "--task",
+        "--task",
         type=str.lower,
         default="binary",
         help="Binary of multiclass MLP regression (mlp)"

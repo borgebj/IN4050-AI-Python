@@ -99,7 +99,7 @@ class NumpyLinRegClass(NumpyClassifier):
             # print occasionally
             if self.verbose:
                 if (epoch + 1) % max(1, epochs//5) == 0 or epoch == 0:
-                    print(f"Epoch {epoch+1:3} - Loss: {loss:.4f}, Accuracy: {(acc*100):.2f}%\t(train)")
+                    print(f"Epoch {epoch+1:3} - Loss: {loss:.4f}, Accuracy: {acc:.3f}\t(train)")
 
 
     def predict(self, X, threshold=0.5):
@@ -116,33 +116,57 @@ class NumpyLinRegClass(NumpyClassifier):
 
 
 def main():
-    from data import X_train, t2_train, X_val, t2_val
+    from data import (
+        X_train, t2_train,  # train data
+        X_val, t2_val,      # validation data
+        X_test, t2_test     # test data
+    )
     print("="*40+"\n\n")
     # ---------------- 0. Command-line-args -------------
     args = parse_args()
     learning_rate = args.learning_rate  # default: 0.1  (best: 1.0  w/scaler)
     epochs = args.epochs                # default: 10   (best: 2    w/ scaler)
     verbose = args.verbose              # default: False
+    eval_set = args.eval_set            # default: validation
     #  ---------------- ---------------- ----------------
 
 
-    # ----------------- 1. normalization ---------------- 
+    # ----------------- 1. normalization ----------------
     train_mean = X_train.mean(axis=0)
     train_std = X_train.std(axis=0)
-    
-    # task 1 part 2 - scaling data using standard scaler
+
+    # Normalizing test data
     norm_train = standard(X_train, train_mean, train_std)
-    X_train = norm_train
-    # ---------------- ---------------- ---------------- 
+    # X_train = norm_train
+
+    # Normalizing validation data
+    norm_val = standard(X_val, train_mean, train_std)
+    # X_val = norm_val
+    # --------------------------------------------------
+
+    # Normalizing testing data
+    norm_test = standard(X_test, train_mean, train_std)
+    # X_test = norm_test
+    # --------------------------------------------------
 
 
     # ---------------- 2. Regression ---------------- --
     cl = NumpyLinRegClass(verbose=verbose)
 
+    # choose validation tset
+    if eval_set == "train":
+        X_eval, t_eval = X_train, t2_train
+    elif eval_set == "validation":
+        X_eval, t_eval = X_val, t2_val
+    elif eval_set == "test":
+        X_eval, t_eval = X_test, t2_test
+
     print(
         f"__Hyperparameters__\n" +
         f"- Learning:   [{learning_rate}]\n" +
-        f"- Epochs:     [{epochs}]\n"
+        f"- Epochs:     [{epochs}]\n" +
+        f"\n________Info________\n" +
+        f"- Evaluation: [{eval_set}]\n"
     )
 
     # training (seen data)
@@ -152,8 +176,9 @@ def main():
         lr=learning_rate, epochs=epochs     # hyperparameters
     )
 
-    predictions = cl.predict(X_val)             # predicting (unseen data)
-    print("\nAccuracy on the validation set:", accuracy(predictions, t2_val))
+    # predicting - using optional eval data
+    predictions = cl.predict(X_eval)
+    print("\nAccuracy on the validation set:", accuracy(predictions, t_eval))
     # ---------------- ---------------- ----------------
 
 

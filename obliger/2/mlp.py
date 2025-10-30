@@ -253,15 +253,14 @@ class MLPMultiClass(MLP):
 
 
 
-def repeated_run(model_args, train_data, eval_data, task, n_runs=10, **fit_args):
+def repeated_run(model_args, train_data, eval_data, task, n_runs=10, **hyper_args):
     """Repeatedly run 'n_runs' times and measure each.
     Save best, standard deviation, and average."""
     (dim_hidden, verbose) = model_args
     (X_train, t_train) = train_data
-    (X_val, t_val) = eval_data
 
     best_acc = 0
-    all_accuracies = []
+    all_acc = []
     best_cl = None
 
     for run in range(n_runs):
@@ -271,12 +270,15 @@ def repeated_run(model_args, train_data, eval_data, task, n_runs=10, **fit_args)
         elif task == "multiclass":
             cl = MLPMultiClass(dim_hidden=dim_hidden, verbose=verbose)
 
-        # training   (seen data)
-        cl.fit(X_train=X_train, t_train=t_train, **fit_args)    # training   (seen data)
-        predictions = cl.predict(X_val)                         # predicting (unseen data)
-        acc = cl.accuracy(predictions, t_val)
+        cl.fit(
+            X_train=X_train, t_train=t_train,   # training (seen data)
+            validation=eval_data,               # validation (unseen data)
+            **hyper_args)                       # hyperparameters
 
-        all_accuracies.append(acc)
+        # last, best accuracy
+        acc = cl.accuracies_val[-1]
+        all_acc.append(acc)
+
         if acc > best_acc:
             best_acc = acc
             best_cl = cl
@@ -284,14 +286,19 @@ def repeated_run(model_args, train_data, eval_data, task, n_runs=10, **fit_args)
         width = len(str(n_runs))
         print(f"Run {run + 1:{width}}/{n_runs:{width}}: accuracy = {acc:.4f}")
 
-    return best_cl, best_acc, all_accuracies
+    # standard deviation and mean
+    mean_acc = np.mean(all_acc)
+    std_acc = np.std(all_acc)
+
+    return best_cl, best_acc, mean_acc, std_acc
 
 
 def main():
     from data import (
-        X_train, X_val,             # input data
-        t2_train, t2_val,           # binary labels
-        t_multi_train, t_multi_val  # multiclass labels
+        # 3 different: train - validation - test
+        X_train, X_val, X_test,                   # input data
+        t2_train, t2_val, t2_test,                # binary labels
+        t_multi_train, t_multi_val, t_multi_test  # multiclass labels
     )
     print("="*40+"\n\n")
     # ---------------- 0. Command-line-args -------------
@@ -302,6 +309,7 @@ def main():
     patience = args.patience            # default: 10
     dim_hidden = args.hidden_dim        # default: 6
     task = args.task                    # default: binary
+    eval_set = args.eval_set            # default: validation
     verbose = args.verbose              # default: False
     # ---------------------------------------------------
 
@@ -317,6 +325,10 @@ def main():
     # Normalizing validation data
     norm_val = standard(X_val, train_mean, train_std)
     X_val = norm_val
+
+    # Normalizing testing data
+    norm_test = standard(X_test, train_mean, train_std)
+    X_test = norm_test
     # --------------------------------------------------
 
 
@@ -324,18 +336,29 @@ def main():
 
     # choose task
     if task == "binary":
-        t_train, t_val = t2_train, t2_val
+        t_train, t_val, t_test = t2_train, t2_val, t2_test
     elif task == "multiclass":
-        t_train, t_val = t_multi_train, t_multi_val
+        t_train, t_val, t_test = t_multi_train, t_multi_val, t_multi_test
 
+    # choose validation tset
+    if eval_set == "train":
+        eval_data = (X_train, t_train)
+    elif eval_set == "validation":
+        eval_data = (X_val, t_val)
+    elif eval_set == "test":
+        eval_data = (X_test, t_test)
+
+    eval_set = eval_set.replace("_", " ")
     print(
-        f"__Hyperparameters__\n" +
+        f"___Hyperparameters___\n" +
         f"- Learning:   [{learning_rate}]\n" +
         f"- Epochs:     [{epochs}]\n" +
         f"- Tolerance:  [{tolerance}]\n" +
         f"- Patience:   [{patience}]\n" +
         f"- Hidden dim: [{dim_hidden}]\n" +
-        f"- Task:       [{task}]\n"
+        f"\n________Info________\n" +
+        f"- Task:       [{task}]\n" +
+        f"- Evaluation: [{eval_set}]\n\n"
     )
 
     # repeated run parameters
@@ -345,32 +368,27 @@ def main():
         "epochs": epochs,
         "tol": tolerance,
         "n_epochs_no_update": patience,
-        "validation": (X_val, t_val)
     }
 
 
     # run (n_runs=10) times, get mean, std and best
     print("="*11+f" Starting {n_runs} runs "+"="*11)
     start = time.time()
-    cl, best_acc, all_acc = repeated_run(
-        model_args=(dim_hidden, verbose),   # passed to model initialization (verbose / dim_hidden)
-        task=task,                          # either Binary of Multiclass regression
-        n_runs=n_runs,                      # train and measure x times
-        train_data=(X_train, t_train),      # training data
-        eval_data=(X_val, t_val),           # evaluation
-        **train_params                      # lr, epochs, patience, tolerance
+    cl, acc, mean, std = repeated_run(
+        model_args=(dim_hidden, verbose),    # passed to model initialization (verbose / dim_hidden)
+        task=task,                           # either Binary of Multiclass regression
+        n_runs=n_runs,                       # train and measure x times
+        train_data=(X_train, t_train),  # training data
+        eval_data=eval_data,                 # evaluation
+        **train_params                       # lr, epochs, patience, tolerance
     )
     end = (time.time() - start)
 
-    # standard deviation and mean
-    mean_acc = np.mean(all_acc)
-    std_acc = np.std(all_acc)
-
     print("\n"+"-"*40)
     print(f"Total runtime:   {end:.2f}s")
-    print(f"Best accuracy:   {best_acc:.4f}")
-    print(f"Mean accuracy:   {mean_acc:.4f}")
-    print(f"Std deviation:   {std_acc:.4f}")
+    print(f"Best accuracy:   {acc:.4f}")
+    print(f"Mean accuracy:   {mean:.4f}")
+    print(f"Std deviation:   {std:.4f}")
     print("-"*40)
     # --------------------------------------------------
 
