@@ -28,6 +28,7 @@ def plot_decision_regions(X, t, clf=[], size=(8, 6)):
     plt.title("Decision regions")
     plt.xlabel("x0")
     plt.ylabel("x1")
+    plt.savefig(f"{clf.__class__.__name__}.png")
     plt.show()
 
 
@@ -49,4 +50,5 @@ def plot_curves(res_train, res_dev, label, log_x=False):
     plt.legend()
     plt.xlabel("Epochs")
     plt.ylabel(label)
+    plt.savefig(f"{label}.png")
     plt.show()
