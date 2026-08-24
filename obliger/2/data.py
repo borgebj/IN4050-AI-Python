@@ -52,3 +52,5 @@ def plot_binary():
     plt.scatter(X_train[:, 0], X_train[:, 1], c=t2_train, s=10.0)
     plt.title("Binary set")
     plt.show()
+
+plot_multiclass()
